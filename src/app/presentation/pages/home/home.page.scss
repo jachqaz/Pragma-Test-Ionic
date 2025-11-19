@@ -1,6 +1,20 @@
-.category-segment {
-  margin: var(--todo-spacing-md);
-  --background: var(--ion-color-light);
+.category-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+
+  ion-chip {
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: var(--todo-transition);
+    --color: var(--ion-color-dark);
+
+    &.selected {
+      --color: white;
+      transform: scale(1.05);
+    }
+  }
 }
 
 .task-list {

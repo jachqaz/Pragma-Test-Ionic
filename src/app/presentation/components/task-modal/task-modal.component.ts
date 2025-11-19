@@ -8,6 +8,26 @@ import {Task} from '../../../domain/models/task.model';
 
 @Component({
   selector: 'app-task-modal',
+  styles: [`
+    .category-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    ion-chip {
+      --color: white;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: var(--todo-transition);
+    }
+
+    ion-chip.selected {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  `],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -29,16 +49,17 @@ import {Task} from '../../../domain/models/task.model';
       </ion-item>
 
       <ion-item>
-        <ion-select
-          [value]="selectedCategoryId()"
-          (ionChange)="selectedCategoryId.set($event.detail.value || '')"
-          placeholder="Select category">
+        <ion-label position="stacked">Category</ion-label>
+        <div class="category-chips">
           @for (category of categoryService.categories(); track category.id) {
-            <ion-select-option [value]="category.id">
+            <ion-chip
+              [class.selected]="selectedCategoryId() === category.id"
+              (click)="selectedCategoryId.set(category.id)"
+              [style.background-color]="category.color">
               {{ category.name }}
-            </ion-select-option>
+            </ion-chip>
           }
-        </ion-select>
+        </div>
       </ion-item>
 
       <ion-button

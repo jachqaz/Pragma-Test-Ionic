@@ -63,4 +63,8 @@ export class CategoryService {
     const updatedCategory = categories.find(c => c.id === id)!;
     return new BehaviorSubject(updatedCategory).asObservable();
   }
+
+  getCategoryById(id: string): Category | undefined {
+    return this.categories().find(cat => cat.id === id);
+  }
 }

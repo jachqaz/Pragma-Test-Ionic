@@ -46,6 +46,11 @@
         }
         <ion-title>Todo App</ion-title>
         <ion-buttons slot="end">
+          @if (categoriesEnabled()) {
+            <ion-button (click)="openCategoryManager()">
+              <ion-icon name="settings"></ion-icon>
+            </ion-button>
+          }
           <ion-button (click)="openTaskModal()">
             <ion-icon name="add"></ion-icon>
           </ion-button>
@@ -54,25 +59,6 @@
     </ion-header>
 
     <ion-content>
-      <!-- Category Filter for Mobile -->
-      @if (!isDesktop() && categoriesEnabled()) {
-        <ion-segment
-          (ionChange)="onCategoryChange(($event.detail.value || 'all') + '')"
-          [value]="selectedCategoryId()"
-          class="category-segment"
-          scrollable="true">
-          <ion-segment-button value="all">
-            <ion-label>All</ion-label>
-          </ion-segment-button>
-          @for (category of categoryService.categories(); track category.id) {
-            <ion-segment-button [value]="category.id">
-              <ion-icon [style.color]="category.color" name="folder"></ion-icon>
-              <ion-label>{{ category.name }}</ion-label>
-            </ion-segment-button>
-          }
-        </ion-segment>
-      }
-
       <!-- Task List with @defer -->
       @defer (when filteredTasks().length > 0) {
         <div class="task-list">

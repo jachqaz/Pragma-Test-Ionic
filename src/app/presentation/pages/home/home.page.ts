@@ -3,8 +3,10 @@ import {CommonModule} from '@angular/common';
 import {IonicModule, ModalController, Platform} from '@ionic/angular';
 import {TodoService} from '../../../data/services/todo.service';
 import {CategoryService} from '../../../data/services/category.service';
+import {TaskFilterService} from '../../../data/services/task-filter.service';
 import {RemoteConfigService} from '../../../data/services/remote-config.service';
 import {TaskModalComponent} from '../../components/task-modal/task-modal.component';
+import {CategoryManagerComponent} from '../../components/category-manager/category-manager.component';
 import {Task} from '../../../domain/models/task.model';
 
 @Component({
@@ -19,22 +21,15 @@ export class HomePage implements OnInit {
   private modalCtrl = inject(ModalController);
   private todoService = inject(TodoService);
   categoryService = inject(CategoryService);
+  private taskFilter = inject(TaskFilterService);
   private remoteConfig = inject(RemoteConfigService);
 
   screenWidth = signal<number>(0);
-  selectedCategoryId = signal<string>('all');
   categoriesEnabled = signal<boolean>(true);
 
   isDesktop = computed(() => this.screenWidth() >= 768);
-
-  filteredTasks = computed(() => {
-    const tasks = this.todoService.tasks();
-    const categoryId = this.selectedCategoryId();
-    const categoriesEnabled = this.categoriesEnabled();
-
-    if (!categoriesEnabled || categoryId === 'all') return tasks;
-    return tasks.filter(task => task.categoryId === categoryId);
-  });
+  filteredTasks = this.taskFilter.filteredTasks;
+  selectedCategoryId = this.taskFilter.selectedCategoryId;
 
   constructor() {
     this.updateScreenWidth();
@@ -58,7 +53,14 @@ export class HomePage implements OnInit {
   }
 
   onCategoryChange(categoryId: string) {
-    this.selectedCategoryId.set(categoryId);
+    this.taskFilter.setSelectedCategory(categoryId);
+  }
+
+  async openCategoryManager() {
+    const modal = await this.modalCtrl.create({
+      component: CategoryManagerComponent
+    });
+    await modal.present();
   }
 
   async openTaskModal(task?: Task) {
