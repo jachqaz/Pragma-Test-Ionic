@@ -116,7 +116,7 @@ jobs:
           retention-days: 1
 
   # =================================================================
-  # 3. BUILD IOS - Descarga 'www' y compila el IPA
+  # 3. BUILD IOS - Versión simplificada sin firma
   # =================================================================
   build_ios:
     needs: build_web
@@ -142,24 +142,15 @@ jobs:
 
       - name: 🗂️ Restore www directory
         run: |
-          echo "Contenido descargado:"
-          ls -la ./www-restored/
-          echo "Moviendo www a raíz..."
           rm -rf www
           mv ./www-restored www
-          echo "Verificando www restaurado:"
-          ls -la www/
-          ls -la www/index.html
 
       - name: 📦 Install Capacitor CLI
         run: npm install -g @capacitor/cli
 
-      - name: 🔧 Clean iOS Platform (if exists)
+      - name: 🔧 Clean iOS Platform
         run: |
-          if [ -d "ios" ]; then
-            echo "🔄 iOS platform exists, removing..."
-            rm -rf ios
-          fi
+          rm -rf ios
 
       - name: 📱 Add iOS Platform
         run: npx cap add ios
@@ -172,19 +163,22 @@ jobs:
           cd ios/App
           pod install
 
-      - name: 🍎 Build iOS Project (Debug IPA)
+      - name: 🍎 Build iOS Without Signing (For Testing)
         run: |
           cd ios/App
           xcodebuild -workspace App.xcworkspace \
             -scheme App \
             -configuration Debug \
-            -destination 'generic/platform=iOS' \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             -archivePath build/App.xcarchive \
             archive
 
-      - name: 📤 Upload iOS Artifact
+      - name: 📤 Upload iOS Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-debug-ipa
+          name: ios-debug-build
           path: ios/App/build/App.xcarchive
           retention-days: 1
