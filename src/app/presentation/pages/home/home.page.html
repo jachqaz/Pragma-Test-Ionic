@@ -102,10 +102,12 @@
           <ion-icon name="checkmark-done-outline" size="large"></ion-icon>
           <h2>No tasks found</h2>
           <p>Create your first task!</p>
-          <ion-button (click)="openTaskModal()" fill="outline">
-            <ion-icon name="add" slot="start"></ion-icon>
-            Add Task
-          </ion-button>
+          @if (enableAddTask()) {
+            <ion-button (click)="openTaskModal()" fill="outline">
+              <ion-icon name="add" slot="start"></ion-icon>
+              Add Task
+            </ion-button>
+          }
         </div>
       }
 

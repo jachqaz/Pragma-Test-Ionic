@@ -4,7 +4,7 @@ import {AlertController, IonicModule, ModalController, Platform, ToastController
 import {TodoService} from '../../../data/services/todo.service';
 import {CategoryService} from '../../../data/services/category.service';
 import {TaskFilterService} from '../../../data/services/task-filter.service';
-import {RemoteConfigRepository} from '../../../domain/repositories/remote-config.repository';
+import {FirebaseRemoteConfigService} from '../../../data/services/firebase-remote-config.service';
 import {TaskModalComponent} from '../../components/task-modal/task-modal.component';
 import {CategoryManagerComponent} from '../../components/category-manager/category-manager.component';
 import {Task} from '../../../domain/models/task.model';
@@ -24,18 +24,18 @@ export class HomePage implements OnInit {
   private todoService = inject(TodoService);
   categoryService = inject(CategoryService);
   private taskFilter = inject(TaskFilterService);
-  private remoteConfig = inject(RemoteConfigRepository);
+  private remoteConfig = inject(FirebaseRemoteConfigService);
 
   screenWidth = signal<number>(0);
   categoriesEnabled = signal<boolean>(true);
 
-  // Feature flags
-  enableAddTask = computed(() => (this.remoteConfig as any).enableAddTask());
-  enableManagementCategories = computed(() => (this.remoteConfig as any).enableManagementCategories());
-
   isDesktop = computed(() => this.screenWidth() >= 768);
   filteredTasks = this.taskFilter.filteredTasks;
   selectedCategoryId = this.taskFilter.selectedCategoryId;
+
+  // Feature flags from Firebase Remote Config
+  enableAddTask = this.remoteConfig.getEnableAddTask();
+  enableManagementCategories = this.remoteConfig.getEnableManagementCategories();
 
   constructor() {
     this.updateScreenWidth();
@@ -44,9 +44,8 @@ export class HomePage implements OnInit {
     });
   }
 
-  async ngOnInit() {
-    await this.remoteConfig.initializeRemoteConfig();
-    const enabled = await this.remoteConfig.getFeatureFlag('enableManagementCategories');
+  ngOnInit() {
+    const enabled = this.remoteConfig.getFeatureFlagSync('enableManagementCategories');
     this.categoriesEnabled.set(enabled);
 
     if (!enabled) {

@@ -1,92 +1,69 @@
-import {Injectable, signal} from '@angular/core';
+import {Injectable, signal, Signal} from '@angular/core';
+import {fetchAndActivate, getBoolean, getRemoteConfig, RemoteConfig} from 'firebase/remote-config';
 import {RemoteConfigRepository} from '../../domain/repositories/remote-config.repository';
 
 @Injectable({providedIn: 'root'})
 export class FirebaseRemoteConfigService extends RemoteConfigRepository {
-  private featureFlags = signal<Record<string, boolean>>({
-    enableAddTask: true,
-    enableManagementCategories: true,
-    enableDarkMode: false
-  });
+  private remoteConfig: RemoteConfig;
 
-  // Reactive signals for UI binding
-  get enableAddTask() {
-    return () => this.featureFlags()['enableAddTask'];
-  }
+  // Private signals for reactive state
+  private _enableAddTask = signal<boolean>(true);
+  private _enableManagementCategories = signal<boolean>(true);
+  private _enableDarkMode = signal<boolean>(false);
 
-  get enableManagementCategories() {
-    return () => this.featureFlags()['enableManagementCategories'];
-  }
-
-  get enableDarkMode() {
-    return () => this.featureFlags()['enableDarkMode'];
+  constructor() {
+    super();
+    this.remoteConfig = getRemoteConfig();
+    this.setDefaults();
   }
 
   async initializeRemoteConfig(): Promise<void> {
-    // Real Firebase implementation (commented for development)
-    /*
-    import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
+    await this.initializeConfig();
+  }
 
-    const remoteConfig = getRemoteConfig();
-    remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+  async initializeConfig(): Promise<void> {
+    // Set fetch interval: 5s for development, 3600s for production
+    this.remoteConfig.settings.minimumFetchIntervalMillis =
+      window.location.hostname === 'localhost' ? 5000 : 3600000;
 
-    remoteConfig.defaultConfig = {
+    await fetchAndActivate(this.remoteConfig);
+
+    // Update signals with activated Firebase values
+    this._enableAddTask.set(getBoolean(this.remoteConfig, 'enableAddTask'));
+    this._enableManagementCategories.set(getBoolean(this.remoteConfig, 'enableManagementCategories'));
+    this._enableDarkMode.set(getBoolean(this.remoteConfig, 'enableDarkMode'));
+  }
+
+  getEnableAddTask(): Signal<boolean> {
+    return this._enableAddTask.asReadonly();
+  }
+
+  getEnableManagementCategories(): Signal<boolean> {
+    return this._enableManagementCategories.asReadonly();
+  }
+
+  getEnableDarkMode(): Signal<boolean> {
+    return this._enableDarkMode.asReadonly();
+  }
+
+  // Repository interface methods
+  async getFeatureFlag(key: string): Promise<boolean> {
+    return getBoolean(this.remoteConfig, key);
+  }
+
+  getFeatureFlagSync(key: string): boolean {
+    return getBoolean(this.remoteConfig, key);
+  }
+
+  private setDefaults(): void {
+    this.remoteConfig.defaultConfig = {
       enableAddTask: true,
       enableManagementCategories: true,
       enableDarkMode: false
     };
 
-    await fetchAndActivate(remoteConfig);
-
-    // Update signals with fetched values
-    this.featureFlags.set({
-      enableAddTask: getValue(remoteConfig, 'enableAddTask').asBoolean(),
-      enableManagementCategories: getValue(remoteConfig, 'enableManagementCategories').asBoolean(),
-      enableDarkMode: getValue(remoteConfig, 'enableDarkMode').asBoolean()
-    });
-    */
-
-    // Development fallback with localStorage override
-    const stored = localStorage.getItem('firebase_feature_flags');
-    if (stored) {
-      try {
-        const flags = JSON.parse(stored);
-        this.featureFlags.update(current => ({...current, ...flags}));
-      } catch (e) {
-        console.warn('Invalid feature flags in localStorage');
-      }
-    }
-
-    // Apply dark mode immediately
-    this.applyDarkMode();
-  }
-
-  async getFeatureFlag(key: string): Promise<boolean> {
-    return this.featureFlags()[key] ?? false;
-  }
-
-  getFeatureFlagSync(key: string): boolean {
-    return this.featureFlags()[key] ?? false;
-  }
-
-  // For testing - toggle flags
-  toggleFeatureFlag(key: string): void {
-    const current = this.featureFlags();
-    const updated = {...current, [key]: !current[key]};
-    this.featureFlags.set(updated);
-    localStorage.setItem('firebase_feature_flags', JSON.stringify(updated));
-
-    if (key === 'enableDarkMode') {
-      this.applyDarkMode();
-    }
-  }
-
-  private applyDarkMode(): void {
-    const isDarkMode = this.featureFlags()['enableDarkMode'];
-    if (isDarkMode) {
-      document.body.classList.add('dark');
-    } else {
-      document.body.classList.remove('dark');
-    }
+    this._enableAddTask.set(true);
+    this._enableManagementCategories.set(true);
+    this._enableDarkMode.set(false);
   }
 }

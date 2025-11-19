@@ -1,40 +1,17 @@
 import {bootstrapApplication} from '@angular/platform-browser';
 import {AppComponent} from './app/presentation/app.component';
 import {appConfig} from './app/presentation/app.config';
-import {RemoteConfigRepository} from './app/domain/repositories/remote-config.repository';
-
-// Firebase initialization (uncomment when Firebase is configured)
-/*
-import { initializeApp } from 'firebase/app';
-import { getRemoteConfig, fetchAndActivate } from 'firebase/remote-config';
-import { environment } from './environments/environment';
+import {initializeApp} from 'firebase/app';
+import {firebaseConfig} from './environments/firebase.config';
+import {FirebaseRemoteConfigService} from './app/data/services/firebase-remote-config.service';
 
 // Initialize Firebase
-const app = initializeApp(environment.firebase);
-
-// Initialize Remote Config
-const remoteConfig = getRemoteConfig(app);
-remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-
-// Set default values
-remoteConfig.defaultConfig = {
-  enable_categories: true,
-  enable_notifications: false,
-  enable_dark_mode: true
-};
-
-// Fetch and activate remote config
-fetchAndActivate(remoteConfig).then(() => {
-  console.log('Remote config fetched and activated');
-}).catch((err) => {
-  console.error('Error fetching remote config:', err);
-});
-*/
+initializeApp(firebaseConfig);
 
 bootstrapApplication(AppComponent, appConfig)
-  .then(appRef => {
+  .then(async (appRef) => {
     // Initialize Firebase Remote Config
-    const remoteConfig = appRef.injector.get(RemoteConfigRepository);
-    remoteConfig.initializeRemoteConfig();
+    const remoteConfig = appRef.injector.get(FirebaseRemoteConfigService);
+    await remoteConfig.initializeConfig();
   })
   .catch(err => console.error(err));
