@@ -58,6 +58,9 @@ jobs:
       - name: 📦 Install Capacitor CLI
         run: npm install -g @capacitor/cli
 
+      - name: 📦 Install Android Package
+        run: npm install @capacitor/android
+
       - name: 📱 Add Android Platform (if missing)
         run: npx cap add android || true # Añade la plataforma si no existe
 
@@ -93,6 +96,9 @@ jobs:
 
       - name: 📦 Install Capacitor CLI
         run: npm install -g @capacitor/cli
+
+      - name: 📦 Install iOS Package
+        run: npm install @capacitor/ios
 
       - name: 📱 Add iOS Platform (if missing)
         run: npx cap add ios || true

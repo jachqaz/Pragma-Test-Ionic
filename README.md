@@ -104,16 +104,38 @@ The app will automatically fetch these flags on startup. To test different confi
 - Changes take effect within 5 seconds in development
 - Production apps fetch every hour
 
-## Build (Hybrid Mobile)
+## Native Platform Setup (Capacitor)
 
-### Add Platforms
+### Android Setup
 
 ```bash
-# Add Android platform
-ionic capacitor add android
+# Install Capacitor Android
+npm install @capacitor/android
 
-# Add iOS platform  
-ionic capacitor add ios
+# Add Android platform
+npx cap add android
+```
+
+### iOS Setup
+
+```bash
+# Install Capacitor iOS
+npm install @capacitor/ios
+
+# Add iOS platform
+npx cap add ios
+```
+
+### Open Native IDEs
+
+After platform addition, launch the respective native IDEs for final configuration and building:
+
+```bash
+# Open Android Studio
+npx cap open android
+
+# Open Xcode
+npx cap open ios
 ```
 
 ### Build and Sync
@@ -124,28 +146,6 @@ ionic capacitor build android
 
 # Build for iOS
 ionic capacitor build ios
-```
-
-### Open in Native IDE
-
-```bash
-# Open Android Studio
-ionic capacitor open android
-
-# Open Xcode
-ionic capacitor open ios
-```
-
-### Alternative: Cordova Build
-
-```bash
-# Add platforms
-ionic cordova platform add android
-ionic cordova platform add ios
-
-# Build
-ionic cordova build android
-ionic cordova build ios
 ```
 
 ## Testing
