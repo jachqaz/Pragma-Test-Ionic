@@ -11,8 +11,7 @@ on:
 
 jobs:
   # =================================================================
-  # 1. BUILD WEB (PWA)
-  # Este job debe ejecutarse primero para generar la carpeta 'www'
+  # 1. BUILD WEB (PWA) - Genera y sube la carpeta 'www'
   # =================================================================
   build_web:
     runs-on: ubuntu-latest
@@ -29,32 +28,33 @@ jobs:
         run: npm install
 
       - name: ⚙️ Build Web (Genera www)
-        # Asume que en tu package.json tienes: "build": "ionic build --prod"
+        # Asegúrate de que este script genera la carpeta 'www'
         run: npm run build
 
-      - name: 🔍 Verify www folder exists
-        # Comprobación de seguridad para asegurar que la compilación anterior fue exitosa
-        run: |
-          if [ ! -d "www" ]; then
-            echo "Error: The 'www' directory was not generated. Check your 'npm run build' script."
-            exit 1
-          fi
-
       - name: 📤 Upload Web Artifact
+        # Sube la carpeta 'www' como un artefacto llamado 'web-build'
         uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: www
+          if-no-files-found: error # Fallará si 'www' no existe
 
   # =================================================================
-  # 2. BUILD ANDROID
+  # 2. BUILD ANDROID - Descarga 'www' y compila el APK
   # =================================================================
   build_android:
-    needs: build_web # Debe esperar el build web
+    needs: build_web
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Code
         uses: actions/checkout@v4
+
+      - name: 📥 Download Web Artifact
+        # PASO CRUCIAL: Descarga la carpeta 'www' al directorio raíz del job
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: . # Descarga el contenido del artefacto (la carpeta www) a la raíz
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
@@ -74,18 +74,16 @@ jobs:
         run: npm install -g @capacitor/cli
 
       - name: 📱 Add Android Platform (if missing)
-        # Este paso está fallando porque la carpeta 'android' ya está en el repositorio.
-        # Lo mantenemos, pero el error "platform already exists" no detiene el job por el || true
+        # Esto solo asegura que la estructura básica esté presente
         run: npx cap add android || true
 
       - name: 🏗️ Sync Web Assets & Dependencies
-        # sync hace copy y update de dependencias, crucial para el gradlew
+        # Ahora el 'sync' debería funcionar porque 'www' existe
         run: npx cap sync android
 
       - name: 🛠️ Build Android Project (Debug APK)
         uses: eskatos/gradle-command-action@v2
         with:
-          # Debe encontrar el gradlew después del sync
           arguments: assembleDebug
 
       - name: 📤 Upload Android Artifact
@@ -95,7 +93,7 @@ jobs:
           path: android/app/build/outputs/apk/debug/*.apk
 
   # =================================================================
-  # 3. BUILD IOS
+  # 3. BUILD IOS - Descarga 'www' y compila el IPA
   # =================================================================
   build_ios:
     needs: build_web
@@ -103,6 +101,13 @@ jobs:
     steps:
       - name: ⬇️ Checkout Code
         uses: actions/checkout@v4
+
+      - name: 📥 Download Web Artifact
+        # PASO CRUCIAL: Descarga la carpeta 'www' al directorio raíz del job
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: . # Descarga el contenido del artefacto (la carpeta www) a la raíz
 
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
@@ -122,7 +127,6 @@ jobs:
         run: npx cap sync ios
 
       - name: 🛠️ Install CocoaPods
-        # Usa el comando "pod install" después de que "cap sync" haya copiado
         run: cd ios/App && pod install
 
       - name: 🍎 Build iOS Project (Debug App)
