@@ -1,3 +1,4 @@
+# .github/workflows/main.yml
 name: Ionic CI/CD
 
 on:
@@ -9,7 +10,10 @@ on:
       - develop
 
 jobs:
+  # =================================================================
   # 1. BUILD WEB (PWA)
+  # Este job debe ejecutarse primero para generar la carpeta 'www'
+  # =================================================================
   build_web:
     runs-on: ubuntu-latest
     steps:
@@ -19,13 +23,22 @@ jobs:
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Ajusta a tu versión de Node.js
+          node-version: '20'
 
       - name: 📦 Install Dependencies
         run: npm install
 
-      - name: ⚙️ Build Web (ng build)
-        run: npm run build # Genera la aplicación lista para producción
+      - name: ⚙️ Build Web (Genera www)
+        # Asume que en tu package.json tienes: "build": "ionic build --prod"
+        run: npm run build
+
+      - name: 🔍 Verify www folder exists
+        # Comprobación de seguridad para asegurar que la compilación anterior fue exitosa
+        run: |
+          if [ ! -d "www" ]; then
+            echo "Error: The 'www' directory was not generated. Check your 'npm run build' script."
+            exit 1
+          fi
 
       - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4
@@ -33,9 +46,11 @@ jobs:
           name: web-build
           path: www
 
+  # =================================================================
   # 2. BUILD ANDROID
+  # =================================================================
   build_android:
-    needs: build_web # Ejecutar después de que el build web haya pasado
+    needs: build_web # Debe esperar el build web
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Code
@@ -58,19 +73,20 @@ jobs:
       - name: 📦 Install Capacitor CLI
         run: npm install -g @capacitor/cli
 
-      - name: 📦 Install Android Package
-        run: npm install @capacitor/android
-
       - name: 📱 Add Android Platform (if missing)
-        run: npx cap add android || true # Añade la plataforma si no existe
+        # Este paso está fallando porque la carpeta 'android' ya está en el repositorio.
+        # Lo mantenemos, pero el error "platform already exists" no detiene el job por el || true
+        run: npx cap add android || true
 
-      - name: 🏗️ Copy Web Assets to Capacitor
-        run: npx cap copy android
+      - name: 🏗️ Sync Web Assets & Dependencies
+        # sync hace copy y update de dependencias, crucial para el gradlew
+        run: npx cap sync android
 
       - name: 🛠️ Build Android Project (Debug APK)
         uses: eskatos/gradle-command-action@v2
         with:
-          arguments: assembleDebug # Esto generará un archivo .apk de depuración
+          # Debe encontrar el gradlew después del sync
+          arguments: assembleDebug
 
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v4
@@ -78,10 +94,12 @@ jobs:
           name: android-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
 
+  # =================================================================
   # 3. BUILD IOS
+  # =================================================================
   build_ios:
-    needs: build_web # Ejecutar después de que el build web haya pasado
-    runs-on: macos-latest # ¡IMPORTANTE! Se requiere macOS para compilar iOS
+    needs: build_web
+    runs-on: macos-latest
     steps:
       - name: ⬇️ Checkout Code
         uses: actions/checkout@v4
@@ -97,26 +115,24 @@ jobs:
       - name: 📦 Install Capacitor CLI
         run: npm install -g @capacitor/cli
 
-      - name: 📦 Install iOS Package
-        run: npm install @capacitor/ios
-
       - name: 📱 Add iOS Platform (if missing)
         run: npx cap add ios || true
 
-      - name: 🏗️ Copy Web Assets to Capacitor
-        run: npx cap copy ios
+      - name: 🏗️ Sync Web Assets & Dependencies
+        run: npx cap sync ios
 
       - name: 🛠️ Install CocoaPods
-        run: cd ios/App && pod install # Necesario para dependencias nativas
+        # Usa el comando "pod install" después de que "cap sync" haya copiado
+        run: cd ios/App && pod install
 
       - name: 🍎 Build iOS Project (Debug App)
         uses: yukiarrr/ios-build-action@v1
         with:
-          project-path: ios/App/App.xcworkspace # Usa workspace después de pod install
-          scheme: App # El nombre de tu esquema de Xcode, generalmente "App"
+          project-path: ios/App/App.xcworkspace
+          scheme: App
           configuration: Debug
           output-path: build/ios-debug.ipa
-          export-method: development # Para un build de prueba/depuración
+          export-method: development
 
       - name: 📤 Upload iOS Artifact
         uses: actions/upload-artifact@v4
