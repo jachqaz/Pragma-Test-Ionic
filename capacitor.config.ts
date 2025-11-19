@@ -1,9 +1,27 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import {CapacitorConfig} from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'Pragma Test Ionic',
-  webDir: 'www'
+  appId: 'com.pragma.todoapp',
+  appName: 'Pragma Todo App',
+  webDir: 'www',
+  server: {
+    androidScheme: 'https'
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#3880ff',
+      showSpinner: false
+    },
+    StatusBar: {
+      style: 'default',
+      backgroundColor: '#3880ff'
+    },
+    Keyboard: {
+      resize: 'body',
+      style: 'dark'
+    }
+  }
 };
 
 export default config;
