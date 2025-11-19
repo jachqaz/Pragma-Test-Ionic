@@ -5,12 +5,10 @@ import {initializeApp} from 'firebase/app';
 import {firebaseConfig} from './environments/firebase.config';
 import {FirebaseRemoteConfigService} from './app/data/services/firebase-remote-config.service';
 
-// Initialize Firebase
 initializeApp(firebaseConfig);
 
 bootstrapApplication(AppComponent, appConfig)
   .then(async (appRef) => {
-    // Initialize Firebase Remote Config
     const remoteConfig = appRef.injector.get(FirebaseRemoteConfigService);
     await remoteConfig.initializeConfig();
   })

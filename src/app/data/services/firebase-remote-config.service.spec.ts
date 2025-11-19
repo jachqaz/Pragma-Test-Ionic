@@ -1,7 +1,6 @@
 import {TestBed} from '@angular/core/testing';
 import {FirebaseRemoteConfigService} from './firebase-remote-config.service';
 
-// Mock Firebase functions
 jest.mock('firebase/remote-config', () => ({
   getRemoteConfig: jest.fn(() => ({
     defaultConfig: {},

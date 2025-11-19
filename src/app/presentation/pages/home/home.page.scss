@@ -107,7 +107,6 @@ ion-menu {
   --width: 280px;
 }
 
-// Desktop specific styles
 @media (min-width: 768px) {
   .task-list {
     height: calc(100vh - 120px);
@@ -118,7 +117,6 @@ ion-menu {
   }
 }
 
-// Mobile specific styles
 @media (max-width: 767px) {
   .task-list {
     height: calc(100vh - 180px);
