@@ -1,0 +1,19 @@
+<ion-app>
+  <!-- Vista Mobile -->
+  <app-mobile-view
+    (addItem)="addItem($event)"
+    (buttonClick)="handleButtonClick()"
+    (removeItem)="removeItem($event)"
+    *ngIf="currentView === 'mobile'"
+    [sharedData]="sharedData">
+  </app-mobile-view>
+
+  <!-- Vista Desktop -->
+  <app-desktop-view
+    (addItem)="addItem($event)"
+    (buttonClick)="handleButtonClick()"
+    (removeItem)="removeItem($event)"
+    *ngIf="currentView === 'desktop'"
+    [sharedData]="sharedData">
+  </app-desktop-view>
+</ion-app>
