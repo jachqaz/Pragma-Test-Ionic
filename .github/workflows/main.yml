@@ -1,4 +1,3 @@
-# .github/workflows/main.yml
 name: Ionic CI/CD
 
 on:
@@ -25,8 +24,8 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm install
 
-      - name: ⚙️ Build Web (ionic build)
-        run: npx ionic build --prod # Genera la aplicación lista para producción
+      - name: ⚙️ Build Web (ng build)
+        run: npm run build # Genera la aplicación lista para producción
 
       - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4
@@ -50,11 +49,20 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm install
 
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
       - name: 📱 Add Android Platform (if missing)
-        run: npx ionic capacitor add android || true # Añade la plataforma si no existe
+        run: npx cap add android || true # Añade la plataforma si no existe
 
       - name: 🏗️ Copy Web Assets to Capacitor
-        run: npx ionic capacitor copy android
+        run: npx cap copy android
 
       - name: 🛠️ Build Android Project (Debug APK)
         uses: eskatos/gradle-command-action@v2
@@ -65,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/*.apk
 
   # 3. BUILD IOS
   build_ios:
@@ -83,11 +91,14 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm install
 
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
       - name: 📱 Add iOS Platform (if missing)
-        run: npx ionic capacitor add ios || true
+        run: npx cap add ios || true
 
       - name: 🏗️ Copy Web Assets to Capacitor
-        run: npx ionic capacitor copy ios
+        run: npx cap copy ios
 
       - name: 🛠️ Install CocoaPods
         run: cd ios/App && pod install # Necesario para dependencias nativas
@@ -95,7 +106,7 @@ jobs:
       - name: 🍎 Build iOS Project (Debug App)
         uses: yukiarrr/ios-build-action@v1
         with:
-          project-path: ios/App/App.xcodeproj # Ajusta si tu proyecto usa .xcworkspace
+          project-path: ios/App/App.xcworkspace # Usa workspace después de pod install
           scheme: App # El nombre de tu esquema de Xcode, generalmente "App"
           configuration: Debug
           output-path: build/ios-debug.ipa
