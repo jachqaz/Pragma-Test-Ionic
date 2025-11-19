@@ -7,106 +7,8 @@ import {Category} from '../../../domain/models/category.model';
 
 @Component({
   selector: 'app-category-manager',
-  template: `
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Manage Categories</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="dismiss()">Done</ion-button>
-        </ion-buttons>
-      </ion-toolbar>
-    </ion-header>
-
-    <ion-content>
-      <!-- Add Category Form -->
-      <form [formGroup]="categoryForm" (ngSubmit)="addCategory()" class="add-form">
-        <ion-item>
-          <ion-input
-            formControlName="name"
-            placeholder="Category name"
-            [clearInput]="true">
-          </ion-input>
-        </ion-item>
-
-        <ion-item>
-          <ion-select formControlName="color" placeholder="Select color">
-            @for (color of colors; track color.value) {
-              <ion-select-option [value]="color.value">
-                <div class="color-option">
-                  <div class="color-circle" [style.background-color]="color.value"></div>
-                  {{ color.name }}
-                </div>
-              </ion-select-option>
-            }
-          </ion-select>
-        </ion-item>
-
-        <ion-button
-          expand="block"
-          type="submit"
-          [disabled]="categoryForm.invalid"
-          class="ion-margin">
-          Add Category
-        </ion-button>
-      </form>
-
-      <!-- Categories List -->
-      <div class="categories-section">
-        <h3>Categories</h3>
-        @for (category of categoryService.categories(); track category.id) {
-          <ion-item-sliding>
-            <ion-item>
-              <div class="category-color" [style.background-color]="category.color" slot="start"></div>
-              <ion-label>{{ category.name }}</ion-label>
-            </ion-item>
-
-            <ion-item-options side="end">
-              <ion-item-option color="primary" (click)="editCategory(category)">
-                <ion-icon name="create" slot="icon-only"></ion-icon>
-              </ion-item-option>
-              <ion-item-option color="danger" (click)="deleteCategory(category.id)">
-                <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-              </ion-item-option>
-            </ion-item-options>
-          </ion-item-sliding>
-        }
-      </div>
-    </ion-content>
-  `,
-  styles: [`
-    .add-form {
-      padding: 16px;
-      border-bottom: 1px solid var(--ion-color-light-shade);
-    }
-
-    .categories-section {
-      padding: 16px;
-
-      h3 {
-        margin: 0 0 16px 0;
-        color: var(--ion-color-dark);
-      }
-    }
-
-    .category-color {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-
-    .color-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .color-circle {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-    }
-  `],
+  templateUrl: './category-manager.component.html',
+  styleUrls: ['./category-manager.component.scss'],
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IonicModule]
 })
@@ -139,7 +41,6 @@ export class CategoryManagerComponent {
   }
 
   editCategory(category: Category) {
-    // Simple inline edit - could be enhanced with a separate modal
     const newName = prompt('Edit category name:', category.name);
     if (newName && newName !== category.name) {
       this.categoryService.updateCategory(category.id, {name: newName}).subscribe();

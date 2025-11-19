@@ -33,7 +33,6 @@ export class HomePage implements OnInit {
   filteredTasks = this.taskFilter.filteredTasks;
   selectedCategoryId = this.taskFilter.selectedCategoryId;
 
-  // Feature flags from Firebase Remote Config
   enableAddTask = this.remoteConfig.getEnableAddTask();
   enableManagementCategories = this.remoteConfig.getEnableManagementCategories();
 

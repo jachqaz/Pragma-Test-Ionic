@@ -4,32 +4,8 @@ import {IonicModule, Platform} from '@ionic/angular';
 
 @Component({
   selector: 'app-responsive-layout',
-  template: `
-    <div [class]="layoutClass()">
-      <ng-content></ng-content>
-    </div>
-  `,
-  styles: [`
-    .mobile-layout {
-      width: 100%;
-      height: 100vh;
-    }
-
-    .tablet-layout {
-      width: 100%;
-      height: 100vh;
-      max-width: 768px;
-      margin: 0 auto;
-    }
-
-    .desktop-layout {
-      width: 100%;
-      height: 100vh;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
-  `],
+  templateUrl: './responsive-layout.component.html',
+  styleUrls: ['./responsive-layout.component.scss'],
   standalone: true,
   imports: [CommonModule, IonicModule]
 })

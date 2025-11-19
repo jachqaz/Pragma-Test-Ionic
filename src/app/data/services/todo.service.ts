@@ -11,7 +11,6 @@ export class TodoService {
 
   constructor() {
     this.loadTasks();
-    // Make instance globally available for category service
     (globalThis as any).todoServiceInstance = this;
   }
 

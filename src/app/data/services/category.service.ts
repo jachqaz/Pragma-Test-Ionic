@@ -8,7 +8,6 @@ export class CategoryService {
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
 
   categories = signal<Category[]>([]);
-  categories$ = this.categoriesSubject.asObservable();
 
   constructor() {
     this.loadCategories();
@@ -29,12 +28,10 @@ export class CategoryService {
   }
 
   canDeleteCategory(id: string): { canDelete: boolean; taskCount: number; isDefault: boolean } {
-    // Prevent deletion of default category
     if (id === 'default') {
       return {canDelete: false, taskCount: 0, isDefault: true};
     }
 
-    // Inject TodoService to check for assigned tasks
     const todoService = (globalThis as any).todoServiceInstance;
     if (!todoService) {
       return {canDelete: true, taskCount: 0, isDefault: false};
@@ -67,7 +64,6 @@ export class CategoryService {
   }
 
   deleteCategoryWithOrphans(id: string): Observable<void> {
-    // Unassign tasks first, then delete category
     const todoService = (globalThis as any).todoServiceInstance;
     if (todoService) {
       todoService.unassignTasksFromCategory(id).subscribe();
