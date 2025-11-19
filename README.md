@@ -161,6 +161,9 @@ npm run test:coverage
 
 # Run tests in watch mode
 npm run test:watch
+
+# Run tests for CI/CD
+npm run test:ci
 ```
 
 ### Test Coverage
@@ -168,6 +171,42 @@ npm run test:watch
 - **Domain Layer**: Model instantiation and property validation
 - **Data Layer**: Service logic, state management, and reactive streams
 - **Presentation Layer**: Component interactions and UI state changes
+
+## CI/CD Pipeline & GitHub Actions
+
+### Centralized Configuration
+
+The entire build and deployment logic (Web, Android, and iOS) is defined within a single file: `.github/workflows/main.yml`. This ensures clean organization and unified CI/CD management.
+
+### Trigger & Scope
+
+Workflow triggers automatically on every push or merge to the `develop` branch.
+
+### Artifacts Generated
+
+The unified `main.yml` workflow produces three final artifacts:
+
+1. **Build Web**: Production web application generation and packaging
+2. **APK de Android**: Native Android installer creation (.apk)
+3. **IPA de iOS**: iOS application package generation (.ipa), ready for testing distribution or App Store
+
+### Prerequisites
+
+**Note**: Mobile build steps (APK/IPA) require GitHub Secrets (signing keys, certificates) to be configured in the repository.
+
+### Current Implementation
+
+**Test Job** (Ubuntu, Node.js 18):
+
+- `npm ci` - Install dependencies
+- `npm run test:ci` - Run tests
+- `npm run lint` - Code linting
+- `npm run build` - Build app
+
+**Android Build** (main branch only):
+
+- `npx ionic capacitor add android`
+- `npx ionic capacitor build android`
 
 ## Project Structure
 

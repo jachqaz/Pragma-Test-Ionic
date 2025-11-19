@@ -1,0 +1,119 @@
+name: Ionic CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  # 1. BUILD WEB (PWA)
+  build_web:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Ajusta a tu versión de Node.js
+
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: ⚙️ Build Web (ng build)
+        run: npm run build # Genera la aplicación lista para producción
+
+      - name: 📤 Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: www
+
+  # 2. BUILD ANDROID
+  build_android:
+    needs: build_web # Ejecutar después de que el build web haya pasado
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: 📱 Add Android Platform (if missing)
+        run: npx cap add android || true # Añade la plataforma si no existe
+
+      - name: 🏗️ Copy Web Assets to Capacitor
+        run: npx cap copy android
+
+      - name: 🛠️ Build Android Project (Debug APK)
+        uses: eskatos/gradle-command-action@v2
+        with:
+          arguments: assembleDebug # Esto generará un archivo .apk de depuración
+
+      - name: 📤 Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  # 3. BUILD IOS
+  build_ios:
+    needs: build_web # Ejecutar después de que el build web haya pasado
+    runs-on: macos-latest # ¡IMPORTANTE! Se requiere macOS para compilar iOS
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install Dependencies
+        run: npm install
+
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: 📱 Add iOS Platform (if missing)
+        run: npx cap add ios || true
+
+      - name: 🏗️ Copy Web Assets to Capacitor
+        run: npx cap copy ios
+
+      - name: 🛠️ Install CocoaPods
+        run: cd ios/App && pod install # Necesario para dependencias nativas
+
+      - name: 🍎 Build iOS Project (Debug App)
+        uses: yukiarrr/ios-build-action@v1
+        with:
+          project-path: ios/App/App.xcworkspace # Usa workspace después de pod install
+          scheme: App # El nombre de tu esquema de Xcode, generalmente "App"
+          configuration: Debug
+          output-path: build/ios-debug.ipa
+          export-method: development # Para un build de prueba/depuración
+
+      - name: 📤 Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-debug-ipa
+          path: build/ios-debug.ipa
