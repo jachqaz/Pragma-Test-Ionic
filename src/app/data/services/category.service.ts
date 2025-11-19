@@ -28,12 +28,24 @@ export class CategoryService {
     this.categoriesSubject.next(categories);
   }
 
-  private getDefaultCategories(): Category[] {
-    return [
-      {id: '1', name: 'Work', color: '#3880ff'},
-      {id: '2', name: 'Personal', color: '#10dc60'},
-      {id: '3', name: 'Shopping', color: '#ffce00'}
-    ];
+  canDeleteCategory(id: string): { canDelete: boolean; taskCount: number; isDefault: boolean } {
+    // Prevent deletion of default category
+    if (id === 'default') {
+      return {canDelete: false, taskCount: 0, isDefault: true};
+    }
+
+    // Inject TodoService to check for assigned tasks
+    const todoService = (globalThis as any).todoServiceInstance;
+    if (!todoService) {
+      return {canDelete: true, taskCount: 0, isDefault: false};
+    }
+
+    const assignedTasks = todoService.getTasksByCategoryId(id);
+    return {
+      canDelete: assignedTasks.length === 0,
+      taskCount: assignedTasks.length,
+      isDefault: false
+    };
   }
 
   addCategory(name: string, color: string): Observable<Category> {
@@ -52,6 +64,25 @@ export class CategoryService {
     const categories = this.categories().filter(cat => cat.id !== id);
     this.saveCategories(categories);
     return new BehaviorSubject(void 0).asObservable();
+  }
+
+  deleteCategoryWithOrphans(id: string): Observable<void> {
+    // Unassign tasks first, then delete category
+    const todoService = (globalThis as any).todoServiceInstance;
+    if (todoService) {
+      todoService.unassignTasksFromCategory(id).subscribe();
+    }
+
+    return this.deleteCategory(id);
+  }
+
+  private getDefaultCategories(): Category[] {
+    return [
+      {id: 'default', name: 'Default', color: '#666666'},
+      {id: '1', name: 'Work', color: '#3880ff'},
+      {id: '2', name: 'Personal', color: '#10dc60'},
+      {id: '3', name: 'Shopping', color: '#ffce00'}
+    ];
   }
 
   updateCategory(id: string, updates: Partial<Category>): Observable<Category> {

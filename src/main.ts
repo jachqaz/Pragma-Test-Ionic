@@ -1,6 +1,7 @@
 import {bootstrapApplication} from '@angular/platform-browser';
 import {AppComponent} from './app/presentation/app.component';
 import {appConfig} from './app/presentation/app.config';
+import {RemoteConfigRepository} from './app/domain/repositories/remote-config.repository';
 
 // Firebase initialization (uncomment when Firebase is configured)
 /*
@@ -31,4 +32,9 @@ fetchAndActivate(remoteConfig).then(() => {
 */
 
 bootstrapApplication(AppComponent, appConfig)
+  .then(appRef => {
+    // Initialize Firebase Remote Config
+    const remoteConfig = appRef.injector.get(RemoteConfigRepository);
+    remoteConfig.initializeRemoteConfig();
+  })
   .catch(err => console.error(err));

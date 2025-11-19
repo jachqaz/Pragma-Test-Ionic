@@ -6,8 +6,10 @@ import {provideAnimations} from '@angular/platform-browser/animations';
 import {routes} from './app.routes';
 import {TodoRepository} from '../domain/repositories/todo.repository';
 import {CategoryRepository} from '../domain/repositories/category.repository';
+import {RemoteConfigRepository} from '../domain/repositories/remote-config.repository';
 import {TodoRepositoryImpl} from '../data/repositories/todo.repository.impl';
 import {CategoryRepositoryImpl} from '../data/repositories/category.repository.impl';
+import {FirebaseRemoteConfigService} from '../data/services/firebase-remote-config.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,6 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimations(),
     importProvidersFrom(IonicModule.forRoot()),
     {provide: TodoRepository, useClass: TodoRepositoryImpl},
-    {provide: CategoryRepository, useClass: CategoryRepositoryImpl}
+    {provide: CategoryRepository, useClass: CategoryRepositoryImpl},
+    {provide: RemoteConfigRepository, useClass: FirebaseRemoteConfigService}
   ]
 };

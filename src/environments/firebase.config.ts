@@ -1,10 +1,11 @@
 export const firebaseConfig = {
-  apiKey: "<your-api-key>",
-  authDomain: "<your-project>.firebaseapp.com",
-  projectId: "<your-project-id>",
-  storageBucket: "<your-project>.appspot.com",
-  messagingSenderId: "<your-sender-id>",
-  appId: "<your-app-id>"
+  apiKey: "AIzaSyBqlidd2eKPVZeIpPJjaCygR_WQ0pTI__o",
+  authDomain: "pragma-test-ionic.firebaseapp.com",
+  projectId: "pragma-test-ionic",
+  storageBucket: "pragma-test-ionic.firebasestorage.app",
+  messagingSenderId: "462163681666",
+  appId: "1:462163681666:web:28ba760269005a8bf8af9b",
+  measurementId: "G-QNWF664QXP"
 };
 
 // Remote Config default values

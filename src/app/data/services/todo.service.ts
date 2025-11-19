@@ -11,6 +11,8 @@ export class TodoService {
 
   constructor() {
     this.loadTasks();
+    // Make instance globally available for category service
+    (globalThis as any).todoServiceInstance = this;
   }
 
   addTask(title: string, categoryId: string): Observable<Task> {
@@ -39,6 +41,20 @@ export class TodoService {
 
   deleteTask(id: string): Observable<void> {
     const tasks = this.tasks().filter(task => task.id !== id);
+    this.saveTasks(tasks);
+    return new BehaviorSubject(void 0).asObservable();
+  }
+
+  getTasksByCategoryId(categoryId: string): Task[] {
+    return this.tasks().filter(task => task.categoryId === categoryId);
+  }
+
+  unassignTasksFromCategory(categoryId: string): Observable<void> {
+    const tasks = this.tasks().map(task =>
+      task.categoryId === categoryId
+        ? {...task, categoryId: 'default'}
+        : task
+    );
     this.saveTasks(tasks);
     return new BehaviorSubject(void 0).asObservable();
   }
