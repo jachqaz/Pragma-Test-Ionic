@@ -57,10 +57,6 @@ jobs:
           # Verificar que se creó correctamente (sin mostrar valores)
           echo "✅ Environment file created"
           ls -la src/environments/
-      - name: 🐛 Debug Secrets
-        run: |
-          echo "FIREBASE_API_KEY length: ${#{{ secrets.FIREBASE_API_KEY }}}"
-          # Esto te dirá si el secret realmente tiene contenido
       - name: 🔍 Verify All Secrets Exist
         run: |
           echo "🔍 Verificando secrets..."
