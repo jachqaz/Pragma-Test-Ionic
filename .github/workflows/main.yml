@@ -27,9 +27,7 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      # La corrección anterior (usando 'echo') ya fue aplicada. Si los secretos aún causan problemas (Línea 32),
-      # asegúrate de que todos los secretos estén definidos en tu repositorio, ya que un valor vacío
-      # podría ser reemplazado por un placeholder como '***' o '...', rompiendo el JSON.
+      # Generación del archivo de entorno con 'echo'
       - name: 🔧 Create Environment File
         run: |
           # 1. Crear el archivo e inicializarlo con la estructura base
@@ -67,6 +65,31 @@ jobs:
 
           echo "✅ Archivo environment.prod.ts creado correctamente"
 
+          # ====================================================================
+          # CÓDIGO AÑADIDO: Verificación de inyección de secreto (con enmascaramiento)
+          # ====================================================================
+          echo "🔒 Verificación de inyección de secretos (MASCARADA):"
+
+          # 1. Extraer el valor de apiKey (el cuarto campo delimitado por comillas dobles)
+          API_KEY_VALUE=$(grep "apiKey" src/environments/environment.prod.ts | awk -F'"' '{print $4}')
+
+          # 2. Verificar que el valor inyectado es substancial y no un placeholder (como el '***' de GH Actions)
+          if [[ "${#API_KEY_VALUE}" -lt 10 ]]; then
+              echo "❌ ERROR: FIREBASE_API_KEY parece corto o vacío. Longitud: ${#API_KEY_VALUE}. Revise que el secreto esté definido."
+              exit 1
+          fi
+
+          # 3. Mostrar una versión truncada para confirmación visual sin revelar el secreto
+          KEY_LENGTH=${#API_KEY_VALUE}
+          FIRST_CHARS=${API_KEY_VALUE:0:4}
+          LAST_CHARS=${API_KEY_VALUE: -4}
+
+          echo "✅ FIREBASE_API_KEY inyectada con éxito (Longitud: $KEY_LENGTH). Confirmación parcial: ${FIRST_CHARS}...${LAST_CHARS}"
+
+          # ====================================================================
+          # Continuar con las verificaciones originales
+          # ====================================================================
+
           # Verificar que todas las claves de Firebase están presentes
           echo "📋 Verificando estructura de Firebase:"
           declare -a firebase_keys=("apiKey" "authDomain" "projectId" "storageBucket" "messagingSenderId" "appId" "measurementId")
@@ -80,7 +103,7 @@ jobs:
             fi
           done
 
-          # CORRECCIÓN PARA LÍNEA 58: Usar \$\{\{ para buscar el patrón literal sin que el parser de Actions lo intente evaluar.
+          # CORRECCIÓN DE ERROR ANTERIOR: Usar \$\{\{ para buscar el patrón literal sin que el parser de Actions lo intente evaluar.
           echo "🔎 Verificando reemplazo de variables..."
           if grep -q "\$\{\{" src/environments/environment.prod.ts; then
             echo "❌ ERROR: Variables sin reemplazar detectadas:"
@@ -92,12 +115,8 @@ jobs:
 
           # Verificar que los valores no están vacíos
           echo "📝 Verificando que los valores no estén vacíos..."
-          # Usamos un patrón más seguro para detectar valores vacíos, asumiendo que un valor es una cadena de texto.
-          if grep -q 'apiKey: ""' src/environments/environment.prod.ts; then
-            echo "❌ ERROR: apiKey está vacío"
-            exit 1
-          fi
-
+          # Si pasa la verificación de longitud de API key, es probable que los demás también pasen si están definidos.
+          # Mantenemos las verificaciones de proyectos por seguridad.
           if grep -q 'projectId: ""' src/environments/environment.prod.ts; then
             echo "❌ ERROR: projectId está vacío"
             exit 1
