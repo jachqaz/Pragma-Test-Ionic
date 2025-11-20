@@ -49,36 +49,71 @@ jobs:
           echo "✅ Environment file created"
           ls -la src/environments/
 
-      - name: 🔍 Verify Firebase Configuration
+      - name: 🔍 Verify Firebase Variables
         run: |
-          echo "🔍 Verificando que las variables se inyectaron correctamente..."
-          if [ -f "src/environments/environment.prod.ts" ]; then
-            echo "✅ El archivo environment.prod.ts fue creado"
-            echo "📋 Estructura del archivo:"
-            # Verificar presencia de cada campo (sin mostrar valores reales)
-            if grep -q "apiKey:" src/environments/environment.prod.ts; then echo "✅ apiKey: [PRESENTE]"; fi
-            if grep -q "authDomain:" src/environments/environment.prod.ts; then echo "✅ authDomain: [PRESENTE]"; fi
-            if grep -q "projectId:" src/environments/environment.prod.ts; then echo "✅ projectId: [PRESENTE]"; fi
-            if grep -q "storageBucket:" src/environments/environment.prod.ts; then echo "✅ storageBucket: [PRESENTE]"; fi
-            if grep -q "messagingSenderId:" src/environments/environment.prod.ts; then echo "✅ messagingSenderId: [PRESENTE]"; fi
-            if grep -q "appId:" src/environments/environment.prod.ts; then echo "✅ appId: [PRESENTE]"; fi
-            if grep -q "measurementId:" src/environments/environment.prod.ts; then echo "✅ measurementId: [PRESENTE]"; fi
+          echo "🔍 Verificando variables de Firebase..."
 
-            # Verificar que no quedaron variables sin reemplazar
-            echo "🔎 Verificando que no hay variables sin reemplazar:"
-            if grep -q "\${{" src/environments/environment.prod.ts; then
-              echo "❌ ERROR: Se encontraron variables sin reemplazar!"
-              exit 1
-            else
-              echo "✅ Todas las variables fueron reemplazadas correctamente"
-            fi
-          else
+          # Verificar que el archivo existe
+          if [ ! -f "src/environments/environment.prod.ts" ]; then
             echo "❌ ERROR: El archivo environment.prod.ts no existe"
             exit 1
           fi
 
+          echo "✅ Archivo environment.prod.ts creado correctamente"
+
+          # Verificar que todas las claves de Firebase están presentes
+          echo "📋 Verificando estructura de Firebase:"
+          declare -a firebase_keys=("apiKey" "authDomain" "projectId" "storageBucket" "messagingSenderId" "appId" "measurementId")
+
+          for key in "${firebase_keys[@]}"; do
+            if grep -q "$key" src/environments/environment.prod.ts; then
+              echo "  ✅ $key: presente"
+            else
+              echo "  ❌ $key: ausente"
+              exit 1
+            fi
+          done
+
+          # Verificar que no quedaron variables sin reemplazar
+          echo "🔎 Verificando reemplazo de variables..."
+          if grep -q "\${{" src/environments/environment.prod.ts; then
+            echo "❌ ERROR: Variables sin reemplazar detectadas:"
+            grep -n "\${{" src/environments/environment.prod.ts
+            exit 1
+          else
+            echo "✅ Todas las variables fueron reemplazadas correctamente"
+          fi
+
+          # Verificar que los valores no están vacíos
+          echo "📝 Verificando que los valores no estén vacíos..."
+          if grep -q 'apiKey: ""' src/environments/environment.prod.ts; then
+            echo "❌ ERROR: apiKey está vacío"
+            exit 1
+          fi
+
+          if grep -q 'projectId: ""' src/environments/environment.prod.ts; then
+            echo "❌ ERROR: projectId está vacío"
+            exit 1
+          fi
+
+          echo "🎉 Todas las verificaciones de Firebase pasaron correctamente"
+
       - name: ⚙️ Build Web
         run: npm run build -- --configuration=production
+
+      - name: 🔍 Verify Build Output
+        run: |
+          echo "🔍 Verificando resultado del build..."
+          if [ -d "www" ]; then
+            echo "✅ Build completado - directorio www creado"
+            echo "📊 Tamaño del build:"
+            du -sh www/
+            echo "📁 Archivos principales:"
+            ls -la www/ | head -10
+          else
+            echo "❌ ERROR: No se creó el directorio www"
+            exit 1
+          fi
 
       - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4
