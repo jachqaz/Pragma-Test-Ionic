@@ -27,10 +27,13 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      - name: 🔧 Create Environment File
+      - name: 🔧 Create Firebase Environment File
         run: |
-          # Crear archivo de environment con las variables de Firebase
-          cat > src/environments/environment.prod.ts << EOF
+          # Crear el directorio de environments si no existe
+          mkdir -p src/environments
+
+          # Crear environment.prod.ts con las variables de Firebase
+          cat > src/environments/environment.prod.ts << 'EOF'
           export const environment = {
             production: true,
             firebase: {
@@ -45,9 +48,8 @@ jobs:
           };
           EOF
 
-          # Verificar que se creó correctamente (sin mostrar valores)
-          echo "✅ Environment file created"
-          ls -la src/environments/
+          echo "✅ Environment file created successfully"
+          echo "📄 File location: src/environments/environment.prod.ts"
 
       - name: 🔍 Verify Firebase Configuration
         run: |
@@ -111,7 +113,7 @@ jobs:
           path: www
 
   # =================================================================
-  # 2. BUILD ANDROID - Ya funciona con Java 21
+  # 2. BUILD ANDROID - Con variables de Firebase
   # =================================================================
   #  build_android:
   #    needs: build_web
@@ -135,27 +137,24 @@ jobs:
   #          name: web-build
   #          path: ./www-restored/
   #
-  #      - name: 🗂️ Restore www directory
+  #      - name: 🗂️ Restore www Directory
   #        run: |
   #          rm -rf www
   #          mv ./www-restored www
+  #          echo "✅ www directory restored"
   #
-  #      - name: 🔧 Create Environment File for Android
-  #        run: |
-  #          cat > src/environments/environment.prod.ts << EOF
-  #          export const environment = {
-  #            production: true,
-  #            firebase: {
-  #              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-  #              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-  #              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-  #              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-  #              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-  #              appId: "${{ secrets.FIREBASE_APP_ID }}",
-  #              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-  #            }
-  #          };
-  #          EOF
+  #          # Verificar que el artefacto descargado contiene Firebase
+  #          echo "🔍 Verificando artefacto descargado:"
+  #          if [ -f "www/index.html" ]; then
+  #            echo "✅ Artefacto descargado correctamente"
+  #            # Verificar que contiene referencias a Firebase (si las hay)
+  #            if grep -q "firebase" www/index.html || true; then
+  #              echo "✅ Firebase detectado en el build"
+  #            fi
+  #          else
+  #            echo "❌ ERROR: No se pudo restaurar el artefacto web"
+  #            exit 1
+  #          fi
   #
   #      - name: ☕ Setup Java 21
   #        uses: actions/setup-java@v4
@@ -181,6 +180,18 @@ jobs:
   #          cd android
   #          chmod +x gradlew
   #          ./gradlew assembleDebug --no-daemon
+  #
+  #      - name: 🔍 Verify Android APK
+  #        run: |
+  #          echo "🔍 Verificando build de Android..."
+  #          if ls android/app/build/outputs/apk/debug/*.apk 1> /dev/null 2>&1; then
+  #            echo "✅ APK generado exitosamente"
+  #            echo "📊 Tamaño del APK:"
+  #            ls -lh android/app/build/outputs/apk/debug/*.apk
+  #          else
+  #            echo "❌ ERROR: No se generó el APK"
+  #            exit 1
+  #          fi
   #
   #      - name: 📤 Upload Android Artifact
   #        uses: actions/upload-artifact@v4
@@ -213,27 +224,20 @@ jobs:
 #          name: web-build
 #          path: ./www-restored/
 #
-#      - name: 🗂️ Restore www directory
+#      - name: 🗂️ Restore www Directory
 #        run: |
 #          rm -rf www
 #          mv ./www-restored www
+#          echo "✅ www directory restored"
 #
-#      - name: 🔧 Create Environment File for iOS
-#        run: |
-#          cat > src/environments/environment.prod.ts << EOF
-#          export const environment = {
-#            production: true,
-#            firebase: {
-#              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-#              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-#              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-#              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-#              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-#              appId: "${{ secrets.FIREBASE_APP_ID }}",
-#              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-#            }
-#          };
-#          EOF
+#          # Verificar artefacto para iOS
+#          echo "🔍 Verificando artefacto para iOS:"
+#          if [ -f "www/index.html" ]; then
+#            echo "✅ Artefacto listo para iOS"
+#          else
+#            echo "❌ ERROR: Artefacto corrupto para iOS"
+#            exit 1
+#          fi
 #
 #      - name: 📦 Install Capacitor CLI
 #        run: npm install -g @capacitor/cli
@@ -265,6 +269,18 @@ jobs:
 #            CODE_SIGNING_ALLOWED=NO \
 #            -archivePath build/App.xcarchive \
 #            archive
+#
+#      - name: 🔍 Verify iOS Build
+#        run: |
+#          echo "🔍 Verificando build de iOS..."
+#          if [ -d "ios/App/build/App.xcarchive" ]; then
+#            echo "✅ iOS archive generado exitosamente"
+#            echo "📊 Contenido del archive:"
+#            find ios/App/build/App.xcarchive -type f -name "*.app" | head -5
+#          else
+#            echo "❌ ERROR: No se generó el archive de iOS"
+#            exit 1
+#          fi
 #
 #      - name: 📤 Upload iOS Build Artifact
 #        uses: actions/upload-artifact@v4
