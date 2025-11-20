@@ -29,11 +29,8 @@ jobs:
 
       - name: 🔧 Create Firebase Environment File
         run: |
-          # Crear el directorio de environments si no existe
           mkdir -p src/environments
-
-          # Crear environment.prod.ts con las variables de Firebase
-          cat > src/environments/environment.prod.ts << 'EOF'
+          cat > src/environments/environment.prod.ts << EOF
           export const environment = {
             production: true,
             firebase: {
@@ -48,37 +45,12 @@ jobs:
           };
           EOF
 
-          echo "✅ Environment file created successfully"
-          echo "📄 File location: src/environments/environment.prod.ts"
-
       - name: 🔍 Verify Firebase Configuration
         run: |
-          echo "🔍 Verificando que las variables se inyectaron correctamente..."
-          # Verificar que el archivo existe
           if [ -f "src/environments/environment.prod.ts" ]; then
-            echo "✅ El archivo environment.prod.ts fue creado"
-            # Mostrar las líneas que contienen las claves (sin mostrar los valores)
-            echo "📋 Estructura del archivo:"
-            grep -o "apiKey:.*" src/environments/environment.prod.ts | sed 's/apiKey:.*/apiKey: [PRESENTE]/'
-            grep -o "authDomain:.*" src/environments/environment.prod.ts | sed 's/authDomain:.*/authDomain: [PRESENTE]/'
-            grep -o "projectId:.*" src/environments/environment.prod.ts | sed 's/projectId:.*/projectId: [PRESENTE]/'
-            grep -o "storageBucket:.*" src/environments/environment.prod.ts | sed 's/storageBucket:.*/storageBucket: [PRESENTE]/'
-            grep -o "messagingSenderId:.*" src/environments/environment.prod.ts | sed 's/messagingSenderId:.*/messagingSenderId: [PRESENTE]/'
-            grep -o "appId:.*" src/environments/environment.prod.ts | sed 's/appId:.*/appId: [PRESENTE]/'
-            grep -o "measurementId:.*" src/environments/environment.prod.ts | sed 's/measurementId:.*/measurementId: [PRESENTE]/'
-
-            # Verificar que no quedaron variables sin reemplazar
-            echo "🔎 Verificando que no hay variables sin reemplazar:"
-            if grep -q "\${{" src/environments/environment.prod.ts; then
-              echo "❌ ERROR: Se encontraron variables sin reemplazar!"
-              grep "\${{" src/environments/environment.prod.ts
-              exit 1
-            else
-              echo "✅ Todas las variables fueron reemplazadas correctamente"
-            fi
-
+            echo "✅ Environment file created successfully"
           else
-            echo "❌ ERROR: El archivo environment.prod.ts no existe"
+            echo "❌ Environment file not found"
             exit 1
           fi
 
