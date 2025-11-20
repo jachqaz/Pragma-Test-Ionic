@@ -122,4 +122,12 @@ ion-menu {
     height: calc(100vh - 180px);
     overflow-y: auto;
   }
+
+  /* Ensure proper safe area handling on mobile */
+  ion-header {
+    ion-toolbar {
+      padding-top: var(--ion-safe-area-top, 0);
+      min-height: calc(56px + var(--ion-safe-area-top, 0));
+    }
+  }
 }
