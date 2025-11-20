@@ -49,6 +49,34 @@ jobs:
           echo "✅ Environment file created"
           ls -la src/environments/
 
+      - name: 🔍 Verify Firebase Configuration
+        run: |
+          echo "🔍 Verificando que las variables se inyectaron correctamente..."
+          if [ -f "src/environments/environment.prod.ts" ]; then
+            echo "✅ El archivo environment.prod.ts fue creado"
+            echo "📋 Estructura del archivo:"
+            # Verificar presencia de cada campo (sin mostrar valores reales)
+            if grep -q "apiKey:" src/environments/environment.prod.ts; then echo "✅ apiKey: [PRESENTE]"; fi
+            if grep -q "authDomain:" src/environments/environment.prod.ts; then echo "✅ authDomain: [PRESENTE]"; fi
+            if grep -q "projectId:" src/environments/environment.prod.ts; then echo "✅ projectId: [PRESENTE]"; fi
+            if grep -q "storageBucket:" src/environments/environment.prod.ts; then echo "✅ storageBucket: [PRESENTE]"; fi
+            if grep -q "messagingSenderId:" src/environments/environment.prod.ts; then echo "✅ messagingSenderId: [PRESENTE]"; fi
+            if grep -q "appId:" src/environments/environment.prod.ts; then echo "✅ appId: [PRESENTE]"; fi
+            if grep -q "measurementId:" src/environments/environment.prod.ts; then echo "✅ measurementId: [PRESENTE]"; fi
+
+            # Verificar que no quedaron variables sin reemplazar
+            echo "🔎 Verificando que no hay variables sin reemplazar:"
+            if grep -q "\${{" src/environments/environment.prod.ts; then
+              echo "❌ ERROR: Se encontraron variables sin reemplazar!"
+              exit 1
+            else
+              echo "✅ Todas las variables fueron reemplazadas correctamente"
+            fi
+          else
+            echo "❌ ERROR: El archivo environment.prod.ts no existe"
+            exit 1
+          fi
+
       - name: ⚙️ Build Web
         run: npm run build -- --configuration=production
 
