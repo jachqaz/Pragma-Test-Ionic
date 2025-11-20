@@ -27,23 +27,28 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
+      # CORRECCIÓN: Usamos 'echo' para garantizar el correcto parseo de las variables de Secrets
       - name: 🔧 Create Environment File
         run: |
-          # Crear archivo de environment con las variables de Firebase
-          cat > src/environments/environment.prod.ts << EOF
-          export const environment = {
-            production: true,
-            firebase: {
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-              appId: "${{ secrets.FIREBASE_APP_ID }}",
-              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-            }
-          };
-          EOF
+          # 1. Crear el archivo e inicializarlo con la estructura base
+          ENVIRONMENT_FILE="src/environments/environment.prod.ts"
+          echo "export const environment = {" > $ENVIRONMENT_FILE
+          echo "  production: true," >> $ENVIRONMENT_FILE
+          echo "  firebase: {" >> $ENVIRONMENT_FILE
+
+          # 2. Inyectar los secretos de Firebase
+          # Cada variable ${{ ... }} ahora está claramente en una línea de comando de shell.
+          echo "    apiKey: \"${{ secrets.FIREBASE_API_KEY }}\"," >> $ENVIRONMENT_FILE
+          echo "    authDomain: \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\"," >> $ENVIRONMENT_FILE
+          echo "    projectId: \"${{ secrets.FIREBASE_PROJECT_ID }}\"," >> $ENVIRONMENT_FILE
+          echo "    storageBucket: \"${{ secrets.FIREBASE_STORAGE_BUCKET }}\"," >> $ENVIRONMENT_FILE
+          echo "    messagingSenderId: \"${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}\"," >> $ENVIRONMENT_FILE
+          echo "    appId: \"${{ secrets.FIREBASE_APP_ID }}\"," >> $ENVIRONMENT_FILE
+          echo "    measurementId: \"${{ secrets.FIREBASE_MEASUREMENT_ID }}\"" >> $ENVIRONMENT_FILE
+
+          # 3. Cerrar la estructura
+          echo "  }" >> $ENVIRONMENT_FILE
+          echo "};" >> $ENVIRONMENT_FILE
 
           # Verificar que se creó correctamente (sin mostrar valores)
           echo "✅ Environment file created"
@@ -76,6 +81,7 @@ jobs:
 
           # Verificar que no quedaron variables sin reemplazar
           echo "🔎 Verificando reemplazo de variables..."
+          # Buscamos cualquier patrón ${{
           if grep -q "\${{" src/environments/environment.prod.ts; then
             echo "❌ ERROR: Variables sin reemplazar detectadas:"
             grep -n "\${{" src/environments/environment.prod.ts
@@ -86,6 +92,7 @@ jobs:
 
           # Verificar que los valores no están vacíos
           echo "📝 Verificando que los valores no estén vacíos..."
+          # Usamos un patrón más seguro para detectar valores vacíos, asumiendo que un valor es una cadena de texto.
           if grep -q 'apiKey: ""' src/environments/environment.prod.ts; then
             echo "❌ ERROR: apiKey está vacío"
             exit 1
