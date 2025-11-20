@@ -96,13 +96,61 @@ export const firebaseConfig: FirebaseOptions = {
 
 4. **Publish Configuration**: Click "Publish changes" in Firebase Console
 
-### 3. Feature Flag Usage
+### 3. Feature Flags & Remote Config
 
-The app will automatically fetch these flags on startup. To test different configurations:
+The application uses Firebase Remote Config to control feature availability through three main flags:
+
+#### Feature Flag Details
+
+- **`enableAddTask`**: Controls the visibility and availability of the "Add Task" functionality, including the FAB (Floating Action Button) and add task buttons throughout the application.
+- **`enableManagementCategories`**: Controls the visibility and availability of the "Category Management" feature, allowing users to create, edit, and delete task categories.
+- **`enableDarkMode`**: Controls the application's Dark Mode theme setting, enabling automatic dark/light theme switching based on system preferences or manual toggle.
+
+#### Usage
+
+The app automatically fetches these flags on startup. To test different configurations:
 
 - Modify values in Firebase Console
 - Changes take effect within 5 seconds in development
 - Production apps fetch every hour
+
+### 4. Configuración Segura de Firebase (CI/CD)
+
+For security reasons, Firebase configuration is dynamically injected during the CI/CD build process to protect API keys. The configuration file must **never** be committed to the repository.
+
+#### Required GitHub Secrets
+
+Configure the following secrets in your GitHub repository settings:
+
+- `FIREBASE_API_KEY`
+- `FIREBASE_AUTH_DOMAIN`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_MESSAGING_SENDER_ID`
+- `FIREBASE_APP_ID`
+- `FIREBASE_MEASUREMENT_ID`
+
+#### Dynamic Configuration Injection
+
+The `.github/workflows/main.yml` file uses the following command to generate the secure Firebase configuration:
+
+```bash
+cat > src/environments/firebase.config.ts << EOF
+import {FirebaseOptions} from 'firebase/app';
+
+export const firebaseConfig: FirebaseOptions = {
+  apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+  authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+  projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+  storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+  messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+  appId: "${{ secrets.FIREBASE_APP_ID }}",
+  measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+};
+EOF
+```
+
+This ensures the `FirebaseRemoteConfigService` can properly initialize while keeping sensitive configuration secure.
 
 ## Native Platform Setup (Capacitor)
 
@@ -196,17 +244,13 @@ The unified `main.yml` workflow produces three final artifacts:
 
 ### Current Implementation
 
-**Test Job** (Ubuntu, Node.js 18):
+**Build Process** (Executed via `main.yml`):
 
-- `npm ci` - Install dependencies
-- `npm run test:ci` - Run tests
-- `npm run lint` - Code linting
-- `npm run build` - Build app
+1. **Web Build**: Firebase config injection, dependency installation, and production build
+2. **Android Build**: Platform setup, Capacitor sync, and APK generation
+3. **iOS Build**: Platform setup, CocoaPods installation, and archive creation
 
-**Android Build** (main branch only):
-
-- `npx ionic capacitor add android`
-- `npx ionic capacitor build android`
+All build logic is centralized in `.github/workflows/main.yml` with secure Firebase configuration injection.
 
 ## Project Structure
 
