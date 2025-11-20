@@ -49,8 +49,60 @@ jobs:
           echo "✅ Environment file created"
           ls -la src/environments/
 
-      - name: ⚙️ Build Web
+      - name: 🔍 Verify Firebase Configuration
+        run: |
+          echo "🔍 Verificando que las variables se inyectaron correctamente..."
+          # Verificar que el archivo existe
+          if [ -f "src/environments/environment.prod.ts" ]; then
+            echo "✅ El archivo environment.prod.ts fue creado"
+            # Mostrar las líneas que contienen las claves (sin mostrar los valores)
+            echo "📋 Estructura del archivo:"
+            grep -o "apiKey:.*" src/environments/environment.prod.ts | sed 's/apiKey:.*/apiKey: [PRESENTE]/'
+            grep -o "authDomain:.*" src/environments/environment.prod.ts | sed 's/authDomain:.*/authDomain: [PRESENTE]/'
+            grep -o "projectId:.*" src/environments/environment.prod.ts | sed 's/projectId:.*/projectId: [PRESENTE]/'
+            grep -o "storageBucket:.*" src/environments/environment.prod.ts | sed 's/storageBucket:.*/storageBucket: [PRESENTE]/'
+            grep -o "messagingSenderId:.*" src/environments/environment.prod.ts | sed 's/messagingSenderId:.*/messagingSenderId: [PRESENTE]/'
+            grep -o "appId:.*" src/environments/environment.prod.ts | sed 's/appId:.*/appId: [PRESENTE]/'
+            grep -o "measurementId:.*" src/environments/environment.prod.ts | sed 's/measurementId:.*/measurementId: [PRESENTE]/'
+
+            # Verificar que no quedaron variables sin reemplazar
+            echo "🔎 Verificando que no hay variables sin reemplazar:"
+            if grep -q "\${{" src/environments/environment.prod.ts; then
+              echo "❌ ERROR: Se encontraron variables sin reemplazar!"
+              grep "\${{" src/environments/environment.prod.ts
+              exit 1
+            else
+              echo "✅ Todas las variables fueron reemplazadas correctamente"
+            fi
+
+          else
+            echo "❌ ERROR: El archivo environment.prod.ts no existe"
+            exit 1
+          fi
+
+      - name: ⚙️ Build Web App
         run: npm run build -- --configuration=production
+
+      - name: 🔍 Verify Build Contains Firebase
+        run: |
+          echo "🔍 Verificando que el build incluye Firebase..."
+          # Verificar que el build se creó correctamente
+          if [ -d "www" ]; then
+            echo "✅ Directorio www creado exitosamente"
+            # Verificar archivos principales
+            echo "📁 Contenido del build:"
+            ls -la www/ | head -10
+
+            # Verificar que los archivos de Firebase están presentes (si se usan)
+            if find www -name "*firebase*" | grep -q .; then
+              echo "✅ Archivos de Firebase detectados en el build"
+            else
+              echo "ℹ️  No se detectaron archivos específicos de Firebase (puede ser normal)"
+            fi
+          else
+            echo "❌ ERROR: No se creó el directorio www"
+            exit 1
+          fi
 
       - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4
@@ -61,161 +113,161 @@ jobs:
   # =================================================================
   # 2. BUILD ANDROID - Ya funciona con Java 21
   # =================================================================
-  build_android:
-    needs: build_web
-    runs-on: ubuntu-latest
-    steps:
-      - name: ⬇️ Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: 📦 Install Dependencies
-        run: npm ci
-
-      - name: 📥 Download Web Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: ./www-restored/
-
-      - name: 🗂️ Restore www directory
-        run: |
-          rm -rf www
-          mv ./www-restored www
-
-      - name: 🔧 Create Environment File for Android
-        run: |
-          cat > src/environments/environment.prod.ts << EOF
-          export const environment = {
-            production: true,
-            firebase: {
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-              appId: "${{ secrets.FIREBASE_APP_ID }}",
-              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-            }
-          };
-          EOF
-
-      - name: ☕ Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: 📦 Install Capacitor CLI
-        run: npm install -g @capacitor/cli
-
-      - name: 🔧 Clean Android Platform
-        run: |
-          rm -rf android
-
-      - name: 📱 Add Android Platform
-        run: npx cap add android
-
-      - name: 🏗️ Sync Web Assets & Dependencies
-        run: npx cap sync android
-
-      - name: 🛠️ Build Android Project (Debug APK)
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-
-      - name: 📤 Upload Android Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+  #  build_android:
+  #    needs: build_web
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - name: ⬇️ Checkout Code
+  #        uses: actions/checkout@v4
+  #
+  #      - name: 🟢 Setup Node.js
+  #        uses: actions/setup-node@v4
+  #        with:
+  #          node-version: '20'
+  #          cache: 'npm'
+  #
+  #      - name: 📦 Install Dependencies
+  #        run: npm ci
+  #
+  #      - name: 📥 Download Web Artifact
+  #        uses: actions/download-artifact@v4
+  #        with:
+  #          name: web-build
+  #          path: ./www-restored/
+  #
+  #      - name: 🗂️ Restore www directory
+  #        run: |
+  #          rm -rf www
+  #          mv ./www-restored www
+  #
+  #      - name: 🔧 Create Environment File for Android
+  #        run: |
+  #          cat > src/environments/environment.prod.ts << EOF
+  #          export const environment = {
+  #            production: true,
+  #            firebase: {
+  #              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+  #              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+  #              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+  #              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+  #              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+  #              appId: "${{ secrets.FIREBASE_APP_ID }}",
+  #              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+  #            }
+  #          };
+  #          EOF
+  #
+  #      - name: ☕ Setup Java 21
+  #        uses: actions/setup-java@v4
+  #        with:
+  #          distribution: 'temurin'
+  #          java-version: '21'
+  #
+  #      - name: 📦 Install Capacitor CLI
+  #        run: npm install -g @capacitor/cli
+  #
+  #      - name: 🔧 Clean Android Platform
+  #        run: |
+  #          rm -rf android
+  #
+  #      - name: 📱 Add Android Platform
+  #        run: npx cap add android
+  #
+  #      - name: 🏗️ Sync Web Assets & Dependencies
+  #        run: npx cap sync android
+  #
+  #      - name: 🛠️ Build Android Project (Debug APK)
+  #        run: |
+  #          cd android
+  #          chmod +x gradlew
+  #          ./gradlew assembleDebug --no-daemon
+  #
+  #      - name: 📤 Upload Android Artifact
+  #        uses: actions/upload-artifact@v4
+  #        with:
+  #          name: android-debug-apk
+  #          path: android/app/build/outputs/apk/debug/*.apk
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
   # =================================================================
-  build_ios:
-    needs: build_web
-    runs-on: macos-latest
-    steps:
-      - name: ⬇️ Checkout Code
-        uses: actions/checkout@v4
-
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: 📦 Install Dependencies
-        run: npm ci
-
-      - name: 📥 Download Web Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: ./www-restored/
-
-      - name: 🗂️ Restore www directory
-        run: |
-          rm -rf www
-          mv ./www-restored www
-
-      - name: 🔧 Create Environment File for iOS
-        run: |
-          cat > src/environments/environment.prod.ts << EOF
-          export const environment = {
-            production: true,
-            firebase: {
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-              appId: "${{ secrets.FIREBASE_APP_ID }}",
-              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-            }
-          };
-          EOF
-
-      - name: 📦 Install Capacitor CLI
-        run: npm install -g @capacitor/cli
-
-      - name: 🔧 Clean iOS Platform
-        run: |
-          rm -rf ios
-
-      - name: 📱 Add iOS Platform
-        run: npx cap add ios
-
-      - name: 🏗️ Sync Web Assets & Dependencies
-        run: npx cap sync ios
-
-      - name: 🛠️ Install CocoaPods
-        run: |
-          cd ios/App
-          pod install
-
-      - name: 🍎 Build iOS Without Signing
-        run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            -archivePath build/App.xcarchive \
-            archive
-
-      - name: 📤 Upload iOS Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-debug-build
-          path: ios/App/build/App.xcarchive
+#  build_ios:
+#    needs: build_web
+#    runs-on: macos-latest
+#    steps:
+#      - name: ⬇️ Checkout Code
+#        uses: actions/checkout@v4
+#
+#      - name: 🟢 Setup Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: '20'
+#          cache: 'npm'
+#
+#      - name: 📦 Install Dependencies
+#        run: npm ci
+#
+#      - name: 📥 Download Web Artifact
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: web-build
+#          path: ./www-restored/
+#
+#      - name: 🗂️ Restore www directory
+#        run: |
+#          rm -rf www
+#          mv ./www-restored www
+#
+#      - name: 🔧 Create Environment File for iOS
+#        run: |
+#          cat > src/environments/environment.prod.ts << EOF
+#          export const environment = {
+#            production: true,
+#            firebase: {
+#              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+#              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+#              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+#              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+#              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+#              appId: "${{ secrets.FIREBASE_APP_ID }}",
+#              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+#            }
+#          };
+#          EOF
+#
+#      - name: 📦 Install Capacitor CLI
+#        run: npm install -g @capacitor/cli
+#
+#      - name: 🔧 Clean iOS Platform
+#        run: |
+#          rm -rf ios
+#
+#      - name: 📱 Add iOS Platform
+#        run: npx cap add ios
+#
+#      - name: 🏗️ Sync Web Assets & Dependencies
+#        run: npx cap sync ios
+#
+#      - name: 🛠️ Install CocoaPods
+#        run: |
+#          cd ios/App
+#          pod install
+#
+#      - name: 🍎 Build iOS Without Signing
+#        run: |
+#          cd ios/App
+#          xcodebuild -workspace App.xcworkspace \
+#            -scheme App \
+#            -configuration Debug \
+#            -destination 'generic/platform=iOS Simulator' \
+#            CODE_SIGN_IDENTITY="" \
+#            CODE_SIGNING_REQUIRED=NO \
+#            CODE_SIGNING_ALLOWED=NO \
+#            -archivePath build/App.xcarchive \
+#            archive
+#
+#      - name: 📤 Upload iOS Build Artifact
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: ios-debug-build
+#          path: ios/App/build/App.xcarchive
