@@ -27,7 +27,9 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
 
-      # CORRECCIÓN: Usamos 'echo' para garantizar el correcto parseo de las variables de Secrets
+      # La corrección anterior (usando 'echo') ya fue aplicada. Si los secretos aún causan problemas (Línea 32),
+      # asegúrate de que todos los secretos estén definidos en tu repositorio, ya que un valor vacío
+      # podría ser reemplazado por un placeholder como '***' o '...', rompiendo el JSON.
       - name: 🔧 Create Environment File
         run: |
           # 1. Crear el archivo e inicializarlo con la estructura base
@@ -37,7 +39,6 @@ jobs:
           echo "  firebase: {" >> $ENVIRONMENT_FILE
 
           # 2. Inyectar los secretos de Firebase
-          # Cada variable ${{ ... }} ahora está claramente en una línea de comando de shell.
           echo "    apiKey: \"${{ secrets.FIREBASE_API_KEY }}\"," >> $ENVIRONMENT_FILE
           echo "    authDomain: \"${{ secrets.FIREBASE_AUTH_DOMAIN }}\"," >> $ENVIRONMENT_FILE
           echo "    projectId: \"${{ secrets.FIREBASE_PROJECT_ID }}\"," >> $ENVIRONMENT_FILE
@@ -79,12 +80,11 @@ jobs:
             fi
           done
 
-          # Verificar que no quedaron variables sin reemplazar
+          # CORRECCIÓN PARA LÍNEA 58: Usar \$\{\{ para buscar el patrón literal sin que el parser de Actions lo intente evaluar.
           echo "🔎 Verificando reemplazo de variables..."
-          # Buscamos cualquier patrón ${{
-          if grep -q "\${{" src/environments/environment.prod.ts; then
+          if grep -q "\$\{\{" src/environments/environment.prod.ts; then
             echo "❌ ERROR: Variables sin reemplazar detectadas:"
-            grep -n "\${{" src/environments/environment.prod.ts
+            grep -n "\$\{\{" src/environments/environment.prod.ts
             exit 1
           else
             echo "✅ Todas las variables fueron reemplazadas correctamente"
