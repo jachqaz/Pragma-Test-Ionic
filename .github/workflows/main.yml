@@ -30,13 +30,13 @@ jobs:
 
           all_ok=true
 
-          [ -n "$API_KEY" ] && echo "✅ FIREBASE_API_KEY: DEFINIDO" || { echo "❌ FIREBASE_API_KEY: NO DEFINIDO"; all_ok=false; }
-          [ -n "$AUTH_DOMAIN" ] && echo "✅ FIREBASE_AUTH_DOMAIN: DEFINIDO" || { echo "❌ FIREBASE_AUTH_DOMAIN: NO DEFINIDO"; all_ok=false; }
-          [ -n "$PROJECT_ID" ] && echo "✅ FIREBASE_PROJECT_ID: DEFINIDO" || { echo "❌ FIREBASE_PROJECT_ID: NO DEFINIDO"; all_ok=false; }
-          [ -n "$STORAGE_BUCKET" ] && echo "✅ FIREBASE_STORAGE_BUCKET: DEFINIDO" || { echo "❌ FIREBASE_STORAGE_BUCKET: NO DEFINIDO"; all_ok=false; }
-          [ -n "$MESSAGING_SENDER_ID" ] && echo "✅ FIREBASE_MESSAGING_SENDER_ID: DEFINIDO" || { echo "❌ FIREBASE_MESSAGING_SENDER_ID: NO DEFINIDO"; all_ok=false; }
-          [ -n "$APP_ID" ] && echo "✅ FIREBASE_APP_ID: DEFINIDO" || { echo "❌ FIREBASE_APP_ID: NO DEFINIDO"; all_ok=false; }
-          [ -n "$MEASUREMENT_ID" ] && echo "✅ FIREBASE_MEASUREMENT_ID: DEFINIDO" || { echo "❌ FIREBASE_MEASUREMENT_ID: NO DEFINIDO"; all_ok=false; }
+          [ -n "$API_KEY" ] && echo "✅ FIREBASE_API_KEY: ${API_KEY:0:8}..." || { echo "❌ FIREBASE_API_KEY: NO DEFINIDO"; all_ok=false; }
+          [ -n "$AUTH_DOMAIN" ] && echo "✅ FIREBASE_AUTH_DOMAIN: ${AUTH_DOMAIN:0:15}..." || { echo "❌ FIREBASE_AUTH_DOMAIN: NO DEFINIDO"; all_ok=false; }
+          [ -n "$PROJECT_ID" ] && echo "✅ FIREBASE_PROJECT_ID: ${PROJECT_ID:0:10}..." || { echo "❌ FIREBASE_PROJECT_ID: NO DEFINIDO"; all_ok=false; }
+          [ -n "$STORAGE_BUCKET" ] && echo "✅ FIREBASE_STORAGE_BUCKET: ${STORAGE_BUCKET:0:15}..." || { echo "❌ FIREBASE_STORAGE_BUCKET: NO DEFINIDO"; all_ok=false; }
+          [ -n "$MESSAGING_SENDER_ID" ] && echo "✅ FIREBASE_MESSAGING_SENDER_ID: ${MESSAGING_SENDER_ID:0:6}..." || { echo "❌ FIREBASE_MESSAGING_SENDER_ID: NO DEFINIDO"; all_ok=false; }
+          [ -n "$APP_ID" ] && echo "✅ FIREBASE_APP_ID: ${APP_ID:0:12}..." || { echo "❌ FIREBASE_APP_ID: NO DEFINIDO"; all_ok=false; }
+          [ -n "$MEASUREMENT_ID" ] && echo "✅ FIREBASE_MEASUREMENT_ID: ${MEASUREMENT_ID:0:8}..." || { echo "❌ FIREBASE_MEASUREMENT_ID: NO DEFINIDO"; all_ok=false; }
 
           echo "======================================"
           if [ "$all_ok" = true ]; then
