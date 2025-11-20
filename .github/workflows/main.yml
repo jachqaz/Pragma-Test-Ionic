@@ -1,4 +1,4 @@
-name: Verify Firebase Secrets
+name: Ionic CI/CD
 
 on:
   push:
@@ -9,65 +9,213 @@ on:
       - develop
 
 jobs:
-  verify_secrets:
+  # =================================================================
+  # 1. BUILD WEB - Con variables de Firebase
+  # =================================================================
+  build_web:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🔍 Verify Firebase Secrets
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 🔧 Create Environment File
         run: |
-          echo "🔍 Verificando Firebase Secrets..."
-          echo "======================================"
-          
-          API_KEY="${{ secrets.FIREBASE_API_KEY }}"
-          AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}"
-          PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"
-          STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}"
-          MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"
-          APP_ID="${{ secrets.FIREBASE_APP_ID }}"
-          MEASUREMENT_ID="${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-
-          all_ok=true
-
-          [ -n "$API_KEY" ] && echo "✅ FIREBASE_API_KEY: ${API_KEY:0:8}..." || { echo "❌ FIREBASE_API_KEY: NO DEFINIDO"; all_ok=false; }
-          [ -n "$AUTH_DOMAIN" ] && echo "✅ FIREBASE_AUTH_DOMAIN: ${AUTH_DOMAIN:0:15}..." || { echo "❌ FIREBASE_AUTH_DOMAIN: NO DEFINIDO"; all_ok=false; }
-          [ -n "$PROJECT_ID" ] && echo "✅ FIREBASE_PROJECT_ID: ${PROJECT_ID:0:10}..." || { echo "❌ FIREBASE_PROJECT_ID: NO DEFINIDO"; all_ok=false; }
-          [ -n "$STORAGE_BUCKET" ] && echo "✅ FIREBASE_STORAGE_BUCKET: ${STORAGE_BUCKET:0:15}..." || { echo "❌ FIREBASE_STORAGE_BUCKET: NO DEFINIDO"; all_ok=false; }
-          [ -n "$MESSAGING_SENDER_ID" ] && echo "✅ FIREBASE_MESSAGING_SENDER_ID: ${MESSAGING_SENDER_ID:0:6}..." || { echo "❌ FIREBASE_MESSAGING_SENDER_ID: NO DEFINIDO"; all_ok=false; }
-          [ -n "$APP_ID" ] && echo "✅ FIREBASE_APP_ID: ${APP_ID:0:12}..." || { echo "❌ FIREBASE_APP_ID: NO DEFINIDO"; all_ok=false; }
-          [ -n "$MEASUREMENT_ID" ] && echo "✅ FIREBASE_MEASUREMENT_ID: ${MEASUREMENT_ID:0:8}..." || { echo "❌ FIREBASE_MEASUREMENT_ID: NO DEFINIDO"; all_ok=false; }
-
-          echo "======================================"
-          if [ "$all_ok" = true ]; then
-            echo "🎉 TODOS LOS SECRETS ESTÁN DEFINIDOS"
-          else
-            echo "❌ FALTAN ALGUNOS SECRETS"
-            echo "📝 Ve a Settings → Secrets and variables → Actions"
-            exit 1
-          fi
-
-      - name: 🔧 Test Simple File Creation
-        run: |
-          echo "🧪 Probando creación simple del archivo..."
-          mkdir -p src/environments
-
-          # Crear archivo de forma simple
-          cat > src/environments/environment.prod.ts << 'EOF'
+          # Crear archivo de environment con las variables de Firebase
+          cat > src/environments/environment.prod.ts << EOF
           export const environment = {
             production: true,
             firebase: {
-              apiKey: "$FIREBASE_API_KEY",
-              authDomain: "$FIREBASE_AUTH_DOMAIN",
-              projectId: "$FIREBASE_PROJECT_ID",
-              storageBucket: "$FIREBASE_STORAGE_BUCKET",
-              messagingSenderId: "$FIREBASE_MESSAGING_SENDER_ID",
-              appId: "$FIREBASE_APP_ID",
-              measurementId: "$FIREBASE_MEASUREMENT_ID"
+              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+              appId: "${{ secrets.FIREBASE_APP_ID }}",
+              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
             }
           };
           EOF
 
-          echo "✅ Archivo template creado"
-          echo "📄 Estructura del archivo:"
-          cat src/environments/environment.prod.ts
+          # Verificar que se creó correctamente (sin mostrar valores)
+          echo "✅ Environment file created"
+          ls -la src/environments/
+
+      - name: ⚙️ Build Web
+        run: npm run build -- --configuration=production
+
+      - name: 📤 Upload Web Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: www
+
+  # =================================================================
+  # 2. BUILD ANDROID - Ya funciona con Java 21
+  # =================================================================
+  build_android:
+    needs: build_web
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 📥 Download Web Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./www-restored/
+
+      - name: 🗂️ Restore www directory
+        run: |
+          rm -rf www
+          mv ./www-restored www
+
+      - name: 🔧 Create Environment File for Android
+        run: |
+          cat > src/environments/environment.prod.ts << EOF
+          export const environment = {
+            production: true,
+            firebase: {
+              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+              appId: "${{ secrets.FIREBASE_APP_ID }}",
+              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+            }
+          };
+          EOF
+
+      - name: ☕ Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: 🔧 Clean Android Platform
+        run: |
+          rm -rf android
+
+      - name: 📱 Add Android Platform
+        run: npx cap add android
+
+      - name: 🏗️ Sync Web Assets & Dependencies
+        run: npx cap sync android
+
+      - name: 🛠️ Build Android Project (Debug APK)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 📤 Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: android/app/build/outputs/apk/debug/*.apk
+
+  # =================================================================
+  # 3. BUILD IOS - Con variables de Firebase
+  # =================================================================
+  build_ios:
+    needs: build_web
+    runs-on: macos-latest
+    steps:
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 📥 Download Web Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./www-restored/
+
+      - name: 🗂️ Restore www directory
+        run: |
+          rm -rf www
+          mv ./www-restored www
+
+      - name: 🔧 Create Environment File for iOS
+        run: |
+          cat > src/environments/environment.prod.ts << EOF
+          export const environment = {
+            production: true,
+            firebase: {
+              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
+              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
+              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
+              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
+              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
+              appId: "${{ secrets.FIREBASE_APP_ID }}",
+              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+            }
+          };
+          EOF
+
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: 🔧 Clean iOS Platform
+        run: |
+          rm -rf ios
+
+      - name: 📱 Add iOS Platform
+        run: npx cap add ios
+
+      - name: 🏗️ Sync Web Assets & Dependencies
+        run: npx cap sync ios
+
+      - name: 🛠️ Install CocoaPods
+        run: |
+          cd ios/App
+          pod install
+
+      - name: 🍎 Build iOS Without Signing
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -archivePath build/App.xcarchive \
+            archive
+
+      - name: 📤 Upload iOS Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-debug-build
+          path: ios/App/build/App.xcarchive
