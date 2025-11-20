@@ -2,18 +2,24 @@ name: Ionic CI/CD
 
 on:
   push:
-    branches: [ develop ]
+    branches:
+      - develop
   pull_request:
-    branches: [ develop ]
+    branches:
+      - develop
 
 jobs:
-  build:
+  # =================================================================
+  # 1. BUILD WEB - Con variables de Firebase
+  # =================================================================
+  build_web:
     runs-on: ubuntu-latest
-    outputs:
-      web-artifact: ${{ steps.upload-web.outputs.artifact-id }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
@@ -22,6 +28,7 @@ jobs:
         run: |
           cat > src/environments/firebase.config.ts << EOF
           import {FirebaseOptions} from 'firebase/app';
+          
           export const firebaseConfig: FirebaseOptions = {
             apiKey: "${{ secrets.FIREBASE_API_KEY }}",
             authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
@@ -35,83 +42,140 @@ jobs:
 
       - name: 📦 Install Dependencies
         run: npm ci
+
       - name: ⚙️ Build Web
         run: npm run build -- --configuration=production
 
-      - id: upload-web
+      - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4
         with:
           name: web-build
           path: www
 
-  android:
-    needs: build
+  # =================================================================
+  # 2. BUILD ANDROID - Ya funciona con Java 21
+  # =================================================================
+  build_android:
+    needs: build_web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      - uses: actions/setup-java@v4
+
+      - name: 📦 Install Dependencies
+        run: npm ci
+
+      - name: 📥 Download Web Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./www-restored/
+
+      - name: 🗂️ Restore www directory
+        run: |
+          rm -rf www
+          mv ./www-restored www
+
+      - name: ☕ Setup Java 21
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: 📦 Install Dependencies
-        run: npm ci
-      - name: 📥 Download Web Build
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: www
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
 
-      - name: 🤖 Build Android APK
+      - name: 🔧 Clean Android Platform
         run: |
-          npm install -g @capacitor/cli
-          npx cap add android
-          npx cap sync android
-          cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+          rm -rf android
 
-      - uses: actions/upload-artifact@v4
+      - name: 📱 Add Android Platform
+        run: npx cap add android
+
+      - name: 🏗️ Sync Web Assets & Dependencies
+        run: npx cap sync android
+
+      - name: 🛠️ Build Android Project (Debug APK)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: 📤 Upload Android Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: android-apk
+          name: android-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
 
-  ios:
-    needs: build
+  # =================================================================
+  # 3. BUILD IOS - Con variables de Firebase
+  # =================================================================
+  build_ios:
+    needs: build_web
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: ⬇️ Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: 📦 Install Dependencies
         run: npm ci
-      - name: 📥 Download Web Build
+
+      - name: 📥 Download Web Artifact
         uses: actions/download-artifact@v4
         with:
           name: web-build
-          path: www
+          path: ./www-restored/
 
-      - name: 🍎 Setup iOS Platform
+      - name: 🗂️ Restore www directory
         run: |
-          npm install -g @capacitor/cli
-          npx cap add ios
-          npx cap sync ios
-          cd ios/App && pod install
+          rm -rf www
+          mv ./www-restored www
 
-      - name: 🏗️ Build iOS Archive
+      - name: 📦 Install Capacitor CLI
+        run: npm install -g @capacitor/cli
+
+      - name: 🔧 Clean iOS Platform
+        run: |
+          rm -rf ios
+
+      - name: 📱 Add iOS Platform
+        run: npx cap add ios
+
+      - name: 🏗️ Sync Web Assets & Dependencies
+        run: npx cap sync ios
+
+      - name: 🛠️ Install CocoaPods
         run: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO \
-            -archivePath build/App.xcarchive archive
+          pod install
 
-      - uses: actions/upload-artifact@v4
+      - name: 🍎 Build iOS Without Signing
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -archivePath build/App.xcarchive \
+            archive
+
+      - name: 📤 Upload iOS Build Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: ios-build
+          name: ios-debug-build
           path: ios/App/build/App.xcarchive
