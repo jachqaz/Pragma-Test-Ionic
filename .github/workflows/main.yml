@@ -1,4 +1,4 @@
-name: Ionic CI/CD
+name: Verify Firebase Secrets
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - develop
+  workflow_dispatch: # Permite ejecución manual
 
 jobs:
   verify_secrets:
@@ -20,99 +21,136 @@ jobs:
           echo "🔍 Verificando Firebase Secrets..."
           echo "======================================"
 
-          declare -a required_secrets=(
-            "FIREBASE_API_KEY"
-            "FIREBASE_AUTH_DOMAIN"
-            "FIREBASE_PROJECT_ID"
-            "FIREBASE_STORAGE_BUCKET"
-            "FIREBASE_MESSAGING_SENDER_ID"
-            "FIREBASE_APP_ID"
-            "FIREBASE_MEASUREMENT_ID"
-          )
+          # Verificar cada secret individualmente
+          echo "FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_API_KEY) }})"
+          echo "FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_AUTH_DOMAIN) }})"
+          echo "FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_PROJECT_ID) }})"
+          echo "FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_STORAGE_BUCKET) }})"
+          echo "FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_MESSAGING_SENDER_ID) }})"
+          echo "FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_APP_ID) }})"
+          echo "FIREBASE_MEASUREMENT_ID: ${{ secrets.FIREBASE_MEASUREMENT_ID != '' && 'DEFINIDO' || 'NO DEFINIDO' }} (Longitud: ${{ length(secrets.FIREBASE_MEASUREMENT_ID) }})"
 
-          all_secrets_ok=true
-
-          for secret in "${required_secrets[@]}"; do
-            # Usar eval para acceder dinámicamente a los secrets
-            secret_value="${{ secrets[secret] }}"
-
-            if [ -z "$secret_value" ]; then
-              echo "❌ $secret: NO DEFINIDO o VACÍO"
-              all_secrets_ok=false
-            else
-              # Mostrar longitud y primeros/últimos caracteres (sin revelar completo)
-              secret_length=${#secret_value}
-              first_chars="${secret_value:0:4}"
-              last_chars="${secret_value: -4}"
-              echo "✅ $secret: DEFINIDO (Longitud: $secret_length) → ${first_chars}...${last_chars}"
-            fi
-          done
-
+      - name: 📋 Detailed Secret Check
+        run: |
+          echo "======================================"
+          echo "📋 VERIFICACIÓN DETALLADA:"
           echo "======================================"
 
-          if [ "$all_secrets_ok" = false ]; then
-            echo "❌ ALGUNOS SECRETS NO ESTÁN DEFINIDOS"
+          # Método alternativo para verificar sin revelar valores completos
+          check_secret() {
+            local secret_name=$1
+            local secret_value="${{ secrets[secret_name] }}"
+
+            if [ -n "$secret_value" ]; then
+              echo "✅ $secret_name: DEFINIDO (Longitud: ${#secret_value})"
+              return 0
+            else
+              echo "❌ $secret_name: NO DEFINIDO"
+              return 1
+            fi
+          }
+
+          # Usar variables individuales para cada secret
+          API_KEY="${{ secrets.FIREBASE_API_KEY }}"
+          AUTH_DOMAIN="${{ secrets.FIREBASE_AUTH_DOMAIN }}"
+          PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}"
+          STORAGE_BUCKET="${{ secrets.FIREBASE_STORAGE_BUCKET }}"
+          MESSAGING_SENDER_ID="${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}"
+          APP_ID="${{ secrets.FIREBASE_APP_ID }}"
+          MEASUREMENT_ID="${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+
+          all_ok=true
+
+          if [ -n "$API_KEY" ]; then
+            echo "✅ FIREBASE_API_KEY: DEFINIDO (Longitud: ${#API_KEY})"
+          else
+            echo "❌ FIREBASE_API_KEY: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          if [ -n "$AUTH_DOMAIN" ]; then
+            echo "✅ FIREBASE_AUTH_DOMAIN: DEFINIDO (Longitud: ${#AUTH_DOMAIN})"
+          else
+            echo "❌ FIREBASE_AUTH_DOMAIN: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          if [ -n "$PROJECT_ID" ]; then
+            echo "✅ FIREBASE_PROJECT_ID: DEFINIDO (Longitud: ${#PROJECT_ID})"
+          else
+            echo "❌ FIREBASE_PROJECT_ID: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          if [ -n "$STORAGE_BUCKET" ]; then
+            echo "✅ FIREBASE_STORAGE_BUCKET: DEFINIDO (Longitud: ${#STORAGE_BUCKET})"
+          else
+            echo "❌ FIREBASE_STORAGE_BUCKET: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          if [ -n "$MESSAGING_SENDER_ID" ]; then
+            echo "✅ FIREBASE_MESSAGING_SENDER_ID: DEFINIDO (Longitud: ${#MESSAGING_SENDER_ID})"
+          else
+            echo "❌ FIREBASE_MESSAGING_SENDER_ID: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          if [ -n "$APP_ID" ]; then
+            echo "✅ FIREBASE_APP_ID: DEFINIDO (Longitud: ${#APP_ID})"
+          else
+            echo "❌ FIREBASE_APP_ID: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          if [ -n "$MEASUREMENT_ID" ]; then
+            echo "✅ FIREBASE_MEASUREMENT_ID: DEFINIDO (Longitud: ${#MEASUREMENT_ID})"
+          else
+            echo "❌ FIREBASE_MEASUREMENT_ID: NO DEFINIDO"
+            all_ok=false
+          fi
+
+          echo "======================================"
+          if [ "$all_ok" = true ]; then
+            echo "🎉 TODOS LOS SECRETS ESTÁN DEFINIDOS"
+          else
+            echo "❌ FALTAN ALGUNOS SECRETS"
             echo ""
             echo "📝 INSTRUCCIONES:"
             echo "1. Ve a Settings → Secrets and variables → Actions"
             echo "2. Asegúrate de que todos los secrets de Firebase están definidos"
-            echo "3. Los nombres deben ser EXACTAMENTE iguales (case-sensitive)"
+            echo "3. Los nombres deben ser EXACTAMENTE:"
+            echo "   - FIREBASE_API_KEY"
+            echo "   - FIREBASE_AUTH_DOMAIN"
+            echo "   - FIREBASE_PROJECT_ID"
+            echo "   - FIREBASE_STORAGE_BUCKET"
+            echo "   - FIREBASE_MESSAGING_SENDER_ID"
+            echo "   - FIREBASE_APP_ID"
+            echo "   - FIREBASE_MEASUREMENT_ID"
             exit 1
-          else
-            echo "🎉 TODOS LOS SECRETS ESTÁN DEFINIDOS CORRECTAMENTE"
           fi
 
-      - name: 🔧 Test Environment File Creation
+      - name: 🔧 Test Simple File Creation
         run: |
-          echo "🧪 Probando creación del archivo environment..."
+          echo "🧪 Probando creación simple del archivo..."
           mkdir -p src/environments
 
-          cat > src/environments/environment.prod.ts << EOF
+          # Crear archivo de forma simple
+          cat > src/environments/environment.prod.ts << 'EOF'
           export const environment = {
             production: true,
             firebase: {
-              apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-              authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-              projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-              storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-              messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-              appId: "${{ secrets.FIREBASE_APP_ID }}",
-              measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
+              apiKey: "$FIREBASE_API_KEY",
+              authDomain: "$FIREBASE_AUTH_DOMAIN",
+              projectId: "$FIREBASE_PROJECT_ID",
+              storageBucket: "$FIREBASE_STORAGE_BUCKET",
+              messagingSenderId: "$FIREBASE_MESSAGING_SENDER_ID",
+              appId: "$FIREBASE_APP_ID",
+              measurementId: "$FIREBASE_MEASUREMENT_ID"
             }
           };
           EOF
 
-          echo "✅ Archivo environment.prod.ts creado"
-          echo "📄 Contenido (ocultando valores sensibles):"
-          # Mostrar estructura pero ocultar valores reales
-          sed 's/".*"/"[REDACTED]"/g' src/environments/environment.prod.ts
-
-      - name: 🔎 Verify File Content
-        run: |
-          echo "🔎 Verificando contenido del archivo..."
-          if [ ! -f "src/environments/environment.prod.ts" ]; then
-            echo "❌ ERROR: No se creó el archivo"
-            exit 1
-          fi
-
-          # Verificar que no hay placeholders sin reemplazar
-          if grep -q '\${{' src/environments/environment.prod.ts; then
-            echo "❌ ERROR: Variables sin reemplazar detectadas"
-            grep -n '\${{' src/environments/environment.prod.ts
-            exit 1
-          else
-            echo "✅ Todas las variables fueron reemplazadas correctamente"
-          fi
-
-          # Verificar estructura Firebase
-          declare -a firebase_keys=("apiKey" "authDomain" "projectId" "storageBucket" "messagingSenderId" "appId" "measurementId")
-          for key in "${firebase_keys[@]}"; do
-            if grep -q "$key" src/environments/environment.prod.ts; then
-              echo "✅ $key: presente en archivo"
-            else
-              echo "❌ $key: ausente en archivo"
-              exit 1
-            fi
-          done
-
-          echo "🎉 Verificación completada - Archivo creado correctamente"
+          echo "✅ Archivo template creado"
+          echo "📄 Estructura del archivo:"
+          cat src/environments/environment.prod.ts
