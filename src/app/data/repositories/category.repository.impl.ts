@@ -1,6 +1,5 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, Observable, of} from 'rxjs';
-import {map} from 'rxjs/operators';
 import {CategoryEntity} from '../../domain/entities/category.entity';
 import {CategoryRepository} from '../../domain/repositories/category.repository';
 
@@ -43,16 +42,6 @@ export class CategoryRepositoryImpl extends CategoryRepository {
     ];
     this.categories$.next(defaultCategories);
     this.nextId = 4;
-  }
-
-  getAll(): Observable<CategoryEntity[]> {
-    return this.categories$.asObservable();
-  }
-
-  getById(id: string): Observable<CategoryEntity | null> {
-    return this.categories$.pipe(
-      map(categories => categories.find(category => category.id === id) || null)
-    );
   }
 
   create(categoryData: Omit<CategoryEntity, 'id' | 'createdAt' | 'updatedAt'>): Observable<CategoryEntity> {

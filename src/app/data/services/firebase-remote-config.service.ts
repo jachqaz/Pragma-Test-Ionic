@@ -16,10 +16,6 @@ export class FirebaseRemoteConfigService extends RemoteConfigRepository {
     this.setDefaults();
   }
 
-  async initializeRemoteConfig(): Promise<void> {
-    await this.initializeConfig();
-  }
-
   async initializeConfig(): Promise<void> {
     this.remoteConfig.settings.minimumFetchIntervalMillis =
       window.location.hostname === 'localhost' ? 5000 : 3600000;

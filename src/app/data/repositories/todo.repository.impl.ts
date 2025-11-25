@@ -1,6 +1,5 @@
 import {Injectable} from '@angular/core';
 import {BehaviorSubject, Observable, of} from 'rxjs';
-import {map} from 'rxjs/operators';
 import {TodoEntity} from '../../domain/entities/todo.entity';
 import {TodoRepository} from '../../domain/repositories/todo.repository';
 
@@ -12,22 +11,6 @@ export class TodoRepositoryImpl extends TodoRepository {
   constructor() {
     super();
     this.initializeDefaultTodos();
-  }
-
-  getAll(): Observable<TodoEntity[]> {
-    return this.todos$.asObservable();
-  }
-
-  getById(id: string): Observable<TodoEntity | null> {
-    return this.todos$.pipe(
-      map(todos => todos.find(todo => todo.id === id) || null)
-    );
-  }
-
-  getByCategoryId(categoryId: string): Observable<TodoEntity[]> {
-    return this.todos$.pipe(
-      map(todos => todos.filter(todo => todo.categoryId === categoryId))
-    );
   }
 
   create(todoData: Omit<TodoEntity, 'id' | 'createdAt' | 'updatedAt'>): Observable<TodoEntity> {
@@ -71,27 +54,6 @@ export class TodoRepositoryImpl extends TodoRepository {
     const filteredTodos = currentTodos.filter(todo => todo.id !== id);
     this.todos$.next(filteredTodos);
     return of(void 0);
-  }
-
-  toggleComplete(id: string): Observable<TodoEntity> {
-    const currentTodos = this.todos$.value;
-    const todoIndex = currentTodos.findIndex(todo => todo.id === id);
-
-    if (todoIndex === -1) {
-      throw new Error(`Todo with id ${id} not found`);
-    }
-
-    const updatedTodo = {
-      ...currentTodos[todoIndex],
-      completed: !currentTodos[todoIndex].completed,
-      updatedAt: new Date()
-    };
-
-    const updatedTodos = [...currentTodos];
-    updatedTodos[todoIndex] = updatedTodo;
-    this.todos$.next(updatedTodos);
-
-    return of(updatedTodo);
   }
 
   private initializeDefaultTodos(): void {
