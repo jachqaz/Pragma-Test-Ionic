@@ -1,0 +1,133 @@
+.category-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+
+  ion-chip {
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: var(--todo-transition);
+    --color: var(--ion-color-dark);
+
+    &.selected {
+      --color: white;
+      transform: scale(1.05);
+    }
+  }
+}
+
+.task-list {
+  height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.completed {
+  opacity: 0.6;
+
+  &.item-native {
+    background: var(--ion-color-light-tint);
+  }
+}
+
+.completed-text {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.task-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+
+  ion-chip {
+    font-size: 12px;
+    height: 24px;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  color: var(--ion-color-medium);
+  padding: var(--todo-spacing-xl);
+
+  ion-icon {
+    font-size: 64px;
+    margin-bottom: var(--todo-spacing-md);
+  }
+
+  h2 {
+    margin: var(--todo-spacing-sm) 0;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 var(--todo-spacing-lg);
+    opacity: 0.7;
+  }
+}
+
+.selected {
+  --background: var(--ion-color-primary-tint);
+  --color: var(--ion-color-primary-contrast);
+}
+
+.feature-disabled {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  text-align: center;
+  color: var(--ion-color-medium);
+  padding: var(--todo-spacing-xl);
+
+  ion-icon {
+    font-size: 48px;
+    margin-bottom: var(--todo-spacing-md);
+  }
+
+  p {
+    margin: 0;
+    opacity: 0.7;
+  }
+}
+
+ion-split-pane {
+  --side-width: 280px;
+}
+
+ion-menu {
+  --width: 280px;
+}
+
+@media (min-width: 768px) {
+  .task-list {
+    height: calc(100vh - 120px);
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--todo-spacing-md);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .task-list {
+    height: calc(100vh - 180px);
+    overflow-y: auto;
+  }
+
+  /* Ensure proper safe area handling on mobile */
+  ion-header {
+    ion-toolbar {
+      padding-top: var(--ion-safe-area-top, 0);
+      min-height: calc(56px + var(--ion-safe-area-top, 0));
+    }
+  }
+}

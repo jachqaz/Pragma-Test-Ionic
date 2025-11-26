@@ -1,0 +1,41 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ task ? 'Edit Task' : 'Add Task' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">Cancel</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-item>
+    <ion-input
+      (ionInput)="title.set(($event.target.value || '') + '')"
+      [clearInput]="true"
+      [value]="title()"
+      placeholder="Task title">
+    </ion-input>
+  </ion-item>
+
+  <ion-item>
+    <ion-label position="stacked">Category</ion-label>
+    <div class="category-chips">
+      @for (category of categoryService.categories(); track category.id) {
+        <ion-chip
+          (click)="selectedCategoryId.set(category.id)"
+          [class.selected]="selectedCategoryId() === category.id"
+          [style.background-color]="category.color">
+          {{ category.name }}
+        </ion-chip>
+      }
+    </div>
+  </ion-item>
+
+  <ion-button
+    (click)="saveTask()"
+    [disabled]="!title() || !selectedCategoryId()"
+    class="ion-margin"
+    expand="block">
+    {{ task ? 'Update' : 'Add' }} Task
+  </ion-button>
+</ion-content>

@@ -1,0 +1,64 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Manage Categories</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">Done</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Add Category Form -->
+  <form (ngSubmit)="addCategory()" [formGroup]="categoryForm" class="add-form">
+    <ion-item>
+      <ion-input
+        [clearInput]="true"
+        formControlName="name"
+        placeholder="Category name">
+      </ion-input>
+    </ion-item>
+
+    <ion-item>
+      <ion-select formControlName="color" placeholder="Select color">
+        @for (color of colors; track color.value) {
+          <ion-select-option [value]="color.value">
+            <div class="color-option">
+              <div [style.background-color]="color.value" class="color-circle"></div>
+              {{ color.name }}
+            </div>
+          </ion-select-option>
+        }
+      </ion-select>
+    </ion-item>
+
+    <ion-button
+      [disabled]="categoryForm.invalid"
+      class="ion-margin"
+      expand="block"
+      type="submit">
+      Add Category
+    </ion-button>
+  </form>
+
+  <!-- Categories List -->
+  <div class="categories-section">
+    <h3>Categories</h3>
+    @for (category of categoryService.categories(); track category.id) {
+      <ion-item-sliding>
+        <ion-item>
+          <div [style.background-color]="category.color" class="category-color" slot="start"></div>
+          <ion-label>{{ category.name }}</ion-label>
+        </ion-item>
+
+        <ion-item-options side="end">
+          <ion-item-option (click)="editCategory(category)" color="primary">
+            <ion-icon name="create" slot="icon-only"></ion-icon>
+          </ion-item-option>
+          <ion-item-option (click)="deleteCategory(category.id)" color="danger">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
+    }
+  </div>
+</ion-content>
