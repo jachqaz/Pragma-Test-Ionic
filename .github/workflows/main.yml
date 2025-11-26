@@ -53,7 +53,7 @@ jobs:
           path: www
 
   # =================================================================
-  # 2. BUILD ANDROID - Ya funciona con Java 21
+  # 2. BUILD ANDROID - Generar APK en lugar de AAB
   # =================================================================
   build_android:
     needs: build_web
@@ -91,27 +91,34 @@ jobs:
       - name: 🤖 Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: 📱 Add Android Platform & Build APK
+      - name: 📱 Add Android Platform
         run: |
           ionic cordova platform add android --confirm
-          cd platforms/android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+
+      - name: 🛠️ Build Android APK (Release)
+        run: |
+          # Generar APK en lugar de AAB
+          cordova build android --release -- --packageType=apk
 
       - name: 🔍 Verify APK Generation
         run: |
-          echo "Checking for APK files:"
-          find platforms/android -name "*.apk" -type f || echo "No APK files found"
-          echo "Checking for AAB files:"
-          find platforms/android -name "*.aab" -type f || echo "No AAB files found"
-          echo "Checking build outputs:"
-          ls -la platforms/android/app/build/outputs/ || echo "Build outputs not found"
+          echo "🔍 Verificando generación de APK:"
+          echo "Buscando archivos APK..."
+          find platforms/android -name "*.apk" -type f
+          echo ""
+          echo "Contenido de outputs/apk/release/:"
+          ls -la platforms/android/app/build/outputs/apk/release/ || echo "No existe directorio release"
+          echo ""
+          echo "Contenido de outputs/apk/:"
+          find platforms/android/app/build/outputs/apk/ -name "*.apk" -type f 2>/dev/null || echo "No se encontraron APKs"
 
-      - name: 📤 Upload Android Artifact
+      - name: 📤 Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: platforms/android/app/build/outputs/apk/release/*.apk
+          path: |
+            platforms/android/app/build/outputs/apk/release/*.apk
+            platforms/android/app/build/outputs/apk/*.apk
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
