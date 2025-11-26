@@ -28,7 +28,7 @@ jobs:
         run: |
           cat > src/environments/firebase.config.ts << EOF
           import {FirebaseOptions} from 'firebase/app';
-          
+
           export const firebaseConfig: FirebaseOptions = {
             apiKey: "${{ secrets.FIREBASE_API_KEY }}",
             authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
@@ -56,6 +56,7 @@ jobs:
   # 2. BUILD ANDROID - Ya funciona con Java 21
   # =================================================================
   build_android:
+    needs: build_web
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Code
@@ -67,24 +68,19 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: 🔧 Create Firebase Config
-        run: |
-          cat > src/environments/firebase.config.ts << EOF
-          import {FirebaseOptions} from 'firebase/app';
-          
-          export const firebaseConfig: FirebaseOptions = {
-            apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-            authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-            projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-            storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-            messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-            appId: "${{ secrets.FIREBASE_APP_ID }}",
-            measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-          };
-          EOF
-
       - name: 📦 Install Dependencies
-        run: npm install -g ionic cordova cordova-res && npm ci
+        run: npm install -g ionic cordova && npm ci
+
+      - name: 📥 Download Web Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./www-restored/
+
+      - name: 🗂️ Restore www directory
+        run: |
+          rm -rf www
+          mv ./www-restored www
 
       - name: ☕ Setup Java 21
         uses: actions/setup-java@v4
@@ -92,17 +88,10 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: 🤖 Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: 📱 Add Android Platform
-        run: ionic cordova platform add android --confirm
-
-      - name: 🔨 Build Web for Cordova
-        run: ng run app:ionic-cordova-build:production
-
-      - name: 📱 Build Android APK
-        run: ionic cordova build android --prod --release
+      - name: 📱 Add Android Platform & Build
+        run: |
+          ionic cordova platform add android --confirm
+          ionic cordova build android --prod --release
 
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v4
@@ -114,6 +103,7 @@ jobs:
   # 3. BUILD IOS - Con variables de Firebase
   # =================================================================
   build_ios:
+    needs: build_web
     runs-on: macos-latest
     steps:
       - name: ⬇️ Checkout Code
@@ -125,33 +115,24 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: 🔧 Create Firebase Config
-        run: |
-          cat > src/environments/firebase.config.ts << EOF
-          import {FirebaseOptions} from 'firebase/app';
-          
-          export const firebaseConfig: FirebaseOptions = {
-            apiKey: "${{ secrets.FIREBASE_API_KEY }}",
-            authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
-            projectId: "${{ secrets.FIREBASE_PROJECT_ID }}",
-            storageBucket: "${{ secrets.FIREBASE_STORAGE_BUCKET }}",
-            messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
-            appId: "${{ secrets.FIREBASE_APP_ID }}",
-            measurementId: "${{ secrets.FIREBASE_MEASUREMENT_ID }}"
-          };
-          EOF
-
       - name: 📦 Install Dependencies
-        run: npm install -g ionic cordova cordova-res && npm ci
+        run: npm install -g ionic cordova && npm ci
 
-      - name: 📱 Add iOS Platform
-        run: ionic cordova platform add ios --confirm
+      - name: 📥 Download Web Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ./www-restored/
 
-      - name: 🔨 Build Web for Cordova
-        run: ng run app:ionic-cordova-build:production
+      - name: 🗂️ Restore www directory
+        run: |
+          rm -rf www
+          mv ./www-restored www
 
-      - name: 📱 Build iOS App
-        run: ionic cordova build ios --prod
+      - name: 📱 Add iOS Platform & Build
+        run: |
+          ionic cordova platform add ios --confirm
+          ionic cordova build ios --prod
 
       - name: 📤 Upload iOS Build Artifact
         uses: actions/upload-artifact@v4
