@@ -1,7 +1,10 @@
 {
   "name": "Pragma Test Ionic",
   "integrations": {
-    "capacitor": {}
+    "capacitor": {
+      "enabled": false
+    },
+    "cordova": {}
   },
   "type": "angular"
 }

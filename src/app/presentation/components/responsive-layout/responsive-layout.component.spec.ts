@@ -1,6 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ResponsiveLayoutComponent} from './responsive-layout.component';
 import {Platform} from '@ionic/angular';
+import {createMockPlatform} from '../../../testing/cordova-mocks';
 
 describe('ResponsiveLayoutComponent', () => {
   let component: ResponsiveLayoutComponent;
@@ -8,9 +9,7 @@ describe('ResponsiveLayoutComponent', () => {
   let platformSpy: jasmine.SpyObj<Platform>;
 
   beforeEach(async () => {
-    const spy = jasmine.createSpyObj('Platform', ['width'], {
-      resize: {subscribe: jasmine.createSpy()}
-    });
+    const spy = createMockPlatform();
 
     await TestBed.configureTestingModule({
       imports: [ResponsiveLayoutComponent],

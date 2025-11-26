@@ -6,6 +6,7 @@ import {TaskFilterService} from '../../../data/services/task-filter.service';
 import {FirebaseRemoteConfigService} from '../../../data/services/firebase-remote-config.service';
 import {AlertController, ModalController, Platform, ToastController} from '@ionic/angular';
 import {signal} from '@angular/core';
+import {createMockPlatform} from '../../../testing/cordova-mocks';
 
 describe('HomePage', () => {
   let component: HomePage;
@@ -33,9 +34,7 @@ describe('HomePage', () => {
     });
     const modalSpy = jasmine.createSpyObj('ModalController', ['create']);
     const alertSpy = jasmine.createSpyObj('AlertController', ['create']);
-    const platformSpyObj = jasmine.createSpyObj('Platform', ['width'], {
-      resize: {subscribe: jasmine.createSpy()}
-    });
+    const platformSpyObj = createMockPlatform({width: jasmine.createSpy('width').and.returnValue(1024)});
 
     await TestBed.configureTestingModule({
       imports: [HomePage],

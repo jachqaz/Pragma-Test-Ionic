@@ -17,9 +17,20 @@ export class AppComponent implements OnInit {
   screenWidth = signal<number>(0);
 
   ngOnInit() {
+    this.initializePlatform();
     this.detectScreenSize();
     this.platform.resize.subscribe(() => {
       this.detectScreenSize();
+    });
+  }
+
+  private initializePlatform() {
+    this.platform.ready().then(() => {
+      // Platform is ready - Cordova plugins are available
+      if (this.platform.is('cordova')) {
+        console.log('Running on Cordova platform');
+        // Initialize Cordova-specific functionality here
+      }
     });
   }
 

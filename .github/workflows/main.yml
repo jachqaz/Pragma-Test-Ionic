@@ -41,10 +41,10 @@ jobs:
           EOF
 
       - name: 📦 Install Dependencies
-        run: npm ci
+        run: npm install -g ionic cordova && npm ci
 
       - name: ⚙️ Build Web
-        run: npm run build -- --configuration=production
+        run: npm run build
 
       - name: 📤 Upload Web Artifact
         uses: actions/upload-artifact@v4
@@ -69,7 +69,7 @@ jobs:
           cache: 'npm'
 
       - name: 📦 Install Dependencies
-        run: npm ci
+        run: npm install -g ionic cordova && npm ci
 
       - name: 📥 Download Web Artifact
         uses: actions/download-artifact@v4
@@ -88,30 +88,16 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: 📦 Install Capacitor CLI
-        run: npm install -g @capacitor/cli
-
-      - name: 🔧 Clean Android Platform
+      - name: 📱 Add Android Platform & Build
         run: |
-          rm -rf android
-
-      - name: 📱 Add Android Platform
-        run: npx cap add android
-
-      - name: 🏗️ Sync Web Assets & Dependencies
-        run: npx cap sync android
-
-      - name: 🛠️ Build Android Project (Debug APK)
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ionic cordova platform add android --confirm
+          ionic cordova build android --prod --release
 
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: android-release-apk
+          path: platforms/android/app/build/outputs/apk/release/*.apk
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
@@ -130,7 +116,7 @@ jobs:
           cache: 'npm'
 
       - name: 📦 Install Dependencies
-        run: npm ci
+        run: npm install -g ionic cordova && npm ci
 
       - name: 📥 Download Web Artifact
         uses: actions/download-artifact@v4
@@ -143,39 +129,13 @@ jobs:
           rm -rf www
           mv ./www-restored www
 
-      - name: 📦 Install Capacitor CLI
-        run: npm install -g @capacitor/cli
-
-      - name: 🔧 Clean iOS Platform
+      - name: 📱 Add iOS Platform & Build
         run: |
-          rm -rf ios
-
-      - name: 📱 Add iOS Platform
-        run: npx cap add ios
-
-      - name: 🏗️ Sync Web Assets & Dependencies
-        run: npx cap sync ios
-
-      - name: 🛠️ Install CocoaPods
-        run: |
-          cd ios/App
-          pod install
-
-      - name: 🍎 Build iOS Without Signing
-        run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace \
-            -scheme App \
-            -configuration Debug \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            -archivePath build/App.xcarchive \
-            archive
+          ionic cordova platform add ios --confirm
+          ionic cordova build ios --prod
 
       - name: 📤 Upload iOS Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-debug-build
-          path: ios/App/build/App.xcarchive
+          name: ios-build
+          path: platforms/ios/build/device/
