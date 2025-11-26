@@ -94,22 +94,25 @@ jobs:
       - name: 📱 Add Android Platform & Build APK
         run: |
           ionic cordova platform add android --confirm
-          cd platforms/android
-          ./gradlew clean
-          ./gradlew assembleRelease
+          cordova build android --release
 
       - name: 🔍 Verify APK Generation
         run: |
           echo "Checking for APK files:"
           find platforms/android -name "*.apk" -type f || echo "No APK files found"
+          echo "Checking for AAB files:"
+          find platforms/android -name "*.aab" -type f || echo "No AAB files found"
           echo "Checking build outputs:"
-          ls -la platforms/android/app/build/outputs/apk/release/ || echo "Release directory not found"
+          ls -la platforms/android/app/build/outputs/ || echo "Build outputs not found"
 
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
-          path: platforms/android/app/build/outputs/apk/release/*.apk
+          name: android-release-build
+          path: |
+            platforms/android/app/build/outputs/apk/release/*.apk
+            platforms/android/app/build/outputs/bundle/release/*.aab
+        if: always()
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
