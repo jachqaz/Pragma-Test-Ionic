@@ -95,30 +95,26 @@ jobs:
         run: |
           ionic cordova platform add android --confirm
 
-      - name: 🛠️ Build Android APK (Release)
+      - name: 🛠️ Build Android APK (Debug - Signed)
         run: |
-          # Generar APK en lugar de AAB
-          cordova build android --release -- --packageType=apk
+          cd platforms/android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: 🔍 Verify APK Generation
         run: |
-          echo "🔍 Verificando generación de APK:"
+          echo "🔍 Verificando generación de APK firmado:"
           echo "Buscando archivos APK..."
           find platforms/android -name "*.apk" -type f
           echo ""
-          echo "Contenido de outputs/apk/release/:"
-          ls -la platforms/android/app/build/outputs/apk/release/ || echo "No existe directorio release"
-          echo ""
-          echo "Contenido de outputs/apk/:"
-          find platforms/android/app/build/outputs/apk/ -name "*.apk" -type f 2>/dev/null || echo "No se encontraron APKs"
+          echo "Contenido de outputs/apk/debug/:"
+          ls -la platforms/android/app/build/outputs/apk/debug/ || echo "No existe directorio debug"
 
       - name: 📤 Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
-          path: |
-            platforms/android/app/build/outputs/apk/release/*.apk
-            platforms/android/app/build/outputs/apk/*.apk
+          name: android-debug-apk
+          path: platforms/android/app/build/outputs/apk/debug/*.apk
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
