@@ -1,5 +1,4 @@
 import {Injectable, signal, Signal} from '@angular/core';
-import {Platform} from '@ionic/angular';
 import {fetchAndActivate, getBoolean, getRemoteConfig, RemoteConfig} from 'firebase/remote-config';
 import {RemoteConfigRepository} from '../../domain/repositories/remote-config.repository';
 
@@ -11,16 +10,15 @@ export class FirebaseRemoteConfigService extends RemoteConfigRepository {
   private _enableManagementCategories = signal<boolean>(true);
   private _enableDarkMode = signal<boolean>(false);
 
-  constructor(private platform: Platform) {
+  constructor() {
     super();
     this.remoteConfig = getRemoteConfig();
     this.setDefaults();
   }
 
   async initializeConfig(): Promise<void> {
-    // Set fetch interval based on environment and platform
-    const isDev = window.location.hostname === 'localhost' || !this.platform.is('cordova');
-    this.remoteConfig.settings.minimumFetchIntervalMillis = isDev ? 5000 : 3600000;
+    this.remoteConfig.settings.minimumFetchIntervalMillis =
+      window.location.hostname === 'localhost' ? 5000 : 3600000;
 
     await fetchAndActivate(this.remoteConfig);
 

@@ -2,6 +2,8 @@
 
 [![Build Status](https://github.com/jachqaz/Pragma-Test-Ionic/actions/workflows/main.yml/badge.svg)](https://github.com/jachqaz/Pragma-Test-Ionic/actions)
 
+📥 **[Descargar Builds (APK/IPA/Web)](https://github.com/jachqaz/Pragma-Test-Ionic/actions/)**
+
 A modern To-Do List application built with Ionic 7+ and Angular 17+ following Clean Architecture principles, powered by Cordova for native mobile functionality.
 
 ## Architecture
@@ -51,6 +53,12 @@ This application implements **Clean Architecture** with strict separation of con
 - npm or yarn
 - Ionic CLI: `npm install -g @ionic/cli`
 - Cordova CLI: `npm install -g cordova`
+
+**Global Installation Required:**
+
+```bash
+npm install -g ionic cordova
+```
 
 ### Installation Steps
 
@@ -198,19 +206,18 @@ The application uses Ionic's Platform service to detect the runtime environment:
 ```typescript
 import {Platform} from '@ionic/angular';
 
-constructor(private
-platform: Platform
-)
-{
-  this.platform.ready().then(() => {
-    if (this.platform.is('cordova')) {
-      // Native Cordova environment
-      console.log('Running on native platform');
-    } else {
-      // Web browser environment
-      console.log('Running in web browser');
-    }
-  });
+export class MyComponent {
+  constructor(private platform: Platform) {
+    this.platform.ready().then(() => {
+      if (this.platform.is('cordova')) {
+        // Native Cordova environment
+        console.log('Running on native platform');
+      } else {
+        // Web browser environment
+        console.log('Running in web browser');
+      }
+    });
+  }
 }
 ```
 
@@ -228,7 +235,9 @@ When adding new Cordova plugins, follow this pattern:
    ```typescript
    import { PluginName } from '@awesome-cordova-plugins/plugin-name/ngx';
    
-   constructor(private pluginName: PluginName) {}
+   export class MyComponent {
+     constructor(private pluginName: PluginName) {}
+   }
    ```
 
 3. **Use with platform detection**:
@@ -323,27 +332,29 @@ The entire build and deployment process is automated through GitHub Actions, wit
 
 ### Build Triggers
 
-- **Automatic**: Every push to `main` branch
+- **Automatic**: Every push to `develop` branch
 - **Manual**: Workflow dispatch for on-demand builds
 - **Pull Requests**: Validation builds for code review
 
 ### Generated Artifacts
 
-The CI/CD pipeline produces three deployment-ready artifacts:
+The Cordova-based CI/CD pipeline produces three deployment-ready artifacts:
 
 1. **Web Application**: Production-optimized web build with Firebase integration
-2. **Android APK**: Native Android application package ready for distribution
-3. **iOS IPA**: iOS application archive ready for App Store or TestFlight
+2. **Android APK**: Native Android application package ready for distribution via Cordova
+3. **iOS Build**: iOS application archive ready for App Store or TestFlight via Cordova
 
 ### Build Process
 
-**Unified Workflow** (`.github/workflows/main.yml`):
+**Unified Cordova Workflow** (`.github/workflows/main.yml`):
 
 1. **Environment Setup**: Node.js, Java, and Cordova CLI installation
 2. **Dependency Installation**: npm packages and Cordova plugins
-3. **Firebase Configuration**: Secure injection of environment variables
-4. **Multi-Platform Builds**: Parallel web, Android, and iOS compilation
-5. **Artifact Generation**: Packaged applications ready for deployment
+3. **Firebase Configuration**: Secure injection of Firebase environment variables via GitHub Secrets
+4. **Multi-Platform Builds**: Parallel web, Android, and iOS compilation using Cordova
+5. **Artifact Generation**: Cordova-packaged applications ready for deployment
+
+**Firebase Configuration Injection**: The workflow automatically injects Firebase configuration from GitHub Secrets during the build process, ensuring secure handling of API keys and configuration data.
 
 ### Security & Configuration
 
@@ -355,13 +366,15 @@ The CI/CD pipeline produces three deployment-ready artifacts:
 
 **Android Build Requirements:**
 
-- Java 17 JDK
+- Java 21 JDK
 - Android SDK and build tools
+- Cordova Android platform
 - Signing keystore (for release builds)
 
 **iOS Build Requirements:**
 
 - Xcode command line tools
+- Cordova iOS platform
 - iOS provisioning profiles
 - Distribution certificates
 
