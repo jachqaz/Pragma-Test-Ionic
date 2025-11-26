@@ -94,7 +94,9 @@ jobs:
       - name: 📱 Add Android Platform & Build APK
         run: |
           ionic cordova platform add android --confirm
-          cordova build android --release
+          cd platforms/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
       - name: 🔍 Verify APK Generation
         run: |
@@ -108,11 +110,8 @@ jobs:
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-build
-          path: |
-            platforms/android/app/build/outputs/apk/release/*.apk
-            platforms/android/app/build/outputs/bundle/release/*.aab
-        if: always()
+          name: android-release-apk
+          path: platforms/android/app/build/outputs/apk/release/*.apk
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
