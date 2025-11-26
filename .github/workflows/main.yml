@@ -53,7 +53,7 @@ jobs:
           path: www
 
   # =================================================================
-  # 2. BUILD ANDROID - Generar APK en lugar de AAB
+  # 2. BUILD ANDROID - Generar APK firmado o debug
   # =================================================================
   build_android:
     needs: build_web
@@ -95,26 +95,30 @@ jobs:
         run: |
           ionic cordova platform add android --confirm
 
-      - name: 🛠️ Build Android APK (Debug - Signed)
+      - name: 🛠️ Build Android APK Debug (Instalable)
         run: |
-          cd platforms/android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # Build DEBUG - Este APK se puede instalar sin firma
+          cordova build android --debug -- --packageType=apk
 
       - name: 🔍 Verify APK Generation
         run: |
-          echo "🔍 Verificando generación de APK firmado:"
+          echo "🔍 Verificando generación de APK:"
           echo "Buscando archivos APK..."
           find platforms/android -name "*.apk" -type f
           echo ""
           echo "Contenido de outputs/apk/debug/:"
           ls -la platforms/android/app/build/outputs/apk/debug/ || echo "No existe directorio debug"
+          echo ""
+          echo "Contenido de outputs/apk/:"
+          find platforms/android/app/build/outputs/apk/ -name "*.apk" -type f 2>/dev/null
 
       - name: 📤 Upload Android APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
-          path: platforms/android/app/build/outputs/apk/debug/*.apk
+          path: |
+            platforms/android/app/build/outputs/apk/debug/*.apk
+            platforms/android/app/build/outputs/apk/*.apk
 
   # =================================================================
   # 3. BUILD IOS - Con variables de Firebase
