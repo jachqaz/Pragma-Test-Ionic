@@ -94,7 +94,16 @@ jobs:
       - name: 📱 Add Android Platform & Build APK
         run: |
           ionic cordova platform add android --confirm
-          ionic cordova build android --prod --release
+          cd platforms/android
+          ./gradlew clean
+          ./gradlew assembleRelease
+
+      - name: 🔍 Verify APK Generation
+        run: |
+          echo "Checking for APK files:"
+          find platforms/android -name "*.apk" -type f || echo "No APK files found"
+          echo "Checking build outputs:"
+          ls -la platforms/android/app/build/outputs/apk/release/ || echo "Release directory not found"
 
       - name: 📤 Upload Android Artifact
         uses: actions/upload-artifact@v4
